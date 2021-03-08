@@ -573,6 +573,9 @@ kube::golang::outfile_for_binary() {
   if [[ ${GOOS} == "windows" ]]; then
     bin="${bin}.exe"
   fi
+  if [[ ${bin} == "kube"* ]]; then
+    bin="x${bin}"
+  fi
   echo "${output_path}/${bin}"
 }
 
@@ -643,7 +646,6 @@ kube::golang::delete_coverage_dummy_test() {
 # Non-covered binaries are then built using go install as usual.
 kube::golang::build_some_binaries() {
   if [[ -n "${KUBE_BUILD_WITH_COVERAGE:-}" ]]; then
-    local -a uncovered=()
     for package in "$@"; do
       if kube::golang::is_instrumented_package "${package}"; then
         V=2 kube::log::info "Building ${package} with coverage..."
@@ -658,18 +660,15 @@ kube::golang::build_some_binaries() {
           -tags coverage \
           "${package}"
       else
-        uncovered+=("${package}")
+        V=2 kube::log::info "Building ${package} without coverage..."
+        go build -o "$(kube::golang::outfile_for_binary "${package}" "${platform}")" "${build_args[@]}" "$@"
       fi
     done
-    if [[ "${#uncovered[@]}" != 0 ]]; then
-      V=2 kube::log::info "Building ${uncovered[*]} without coverage..."
-      go install "${build_args[@]}" "${uncovered[@]}"
-    else
-      V=2 kube::log::info "Nothing to build without coverage."
-     fi
-   else
-    V=2 kube::log::info "Coverage is disabled."
-    go install "${build_args[@]}" "$@"
+  else
+    for package in "$@"; do
+      V=2 kube::log::info "Building ${package} without coverage..."
+      go build -o "$(kube::golang::outfile_for_binary "${package}" "${platform}")" "${build_args[@]}" "$@"
+    done
    fi
 }
 
