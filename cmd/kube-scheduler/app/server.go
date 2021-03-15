@@ -55,6 +55,9 @@ import (
 	"k8s.io/kubernetes/pkg/scheduler/framework/runtime"
 	"k8s.io/kubernetes/pkg/scheduler/metrics/resources"
 	"k8s.io/kubernetes/pkg/scheduler/profile"
+
+	_ "git.basebit.me/enigma/xkube-common/cryptfs"
+	_ "git.basebit.me/enigma/xkube-common/cryptfs/hook"
 )
 
 // Option configures a framework.Registry.

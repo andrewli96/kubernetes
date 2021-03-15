@@ -49,10 +49,13 @@ import (
 	kubeschedulerconfig "k8s.io/kubernetes/pkg/scheduler/apis/config"
 	kubeschedulerscheme "k8s.io/kubernetes/pkg/scheduler/apis/config/scheme"
 	"k8s.io/kubernetes/pkg/scheduler/apis/config/validation"
+	xkubeoptions "k8s.io/kubernetes/pkg/xkube/options"
 )
 
 // Options has all the params needed to run a Scheduler
 type Options struct {
+	X *xkubeoptions.XOptions
+
 	// The default values. These are overridden if ConfigFile is set or by values in InsecureServing.
 	ComponentConfig kubeschedulerconfig.KubeSchedulerConfiguration
 
@@ -86,6 +89,7 @@ func NewOptions() (*Options, error) {
 	}
 
 	o := &Options{
+		X:               xkubeoptions.NewXOptions(),
 		ComponentConfig: *cfg,
 		SecureServing:   apiserveroptions.NewSecureServingOptions().WithLoopback(),
 		CombinedInsecureServing: &CombinedInsecureServingOptions{
@@ -149,6 +153,7 @@ func newDefaultComponentConfig() (*kubeschedulerconfig.KubeSchedulerConfiguratio
 
 // Flags returns flags for a specific scheduler by section name
 func (o *Options) Flags() (nfs cliflag.NamedFlagSets) {
+	o.X.AddFlags(nfs.FlagSet("x"))
 	fs := nfs.FlagSet("misc")
 	fs.StringVar(&o.ConfigFile, "config", o.ConfigFile, `The path to the configuration file. The following flags can overwrite fields in this file:
   --algorithm-provider
@@ -237,6 +242,7 @@ func emptySchedulerProfileConfig(profiles []kubeschedulerconfig.KubeSchedulerPro
 func (o *Options) Validate() []error {
 	var errs []error
 
+	errs = append(errs, o.X.Validate()...)
 	if err := validation.ValidateKubeSchedulerConfiguration(&o.ComponentConfig).ToAggregate(); err != nil {
 		errs = append(errs, err.Errors()...)
 	}

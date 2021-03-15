@@ -15,7 +15,11 @@ cloud.google.com/go/compute/metadata
 ## explicit
 git.basebit.me/enigma/sqlfs-go
 # git.basebit.me/enigma/sqlfs-go => git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d
+# git.basebit.me/enigma/xkube-common v0.0.5-0.20210315082955-7fee80a208a1 => git.basebit.me/enigma/xkube-common v0.0.5-0.20210315082955-7fee80a208a1
+## explicit
 # git.basebit.me/enigma/xkube-common => git.basebit.me/enigma/xkube-common v0.0.5-0.20210315082955-7fee80a208a1
+git.basebit.me/enigma/xkube-common/cryptfs
+git.basebit.me/enigma/xkube-common/cryptfs/hook
 # github.com/Azure/azure-sdk-for-go v43.0.0+incompatible => github.com/Azure/azure-sdk-for-go v43.0.0+incompatible
 ## explicit
 # github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v43.0.0+incompatible
@@ -195,6 +199,8 @@ github.com/blang/semver
 # github.com/boltdb/bolt v1.3.1 => github.com/boltdb/bolt v1.3.1
 ## explicit
 # github.com/boltdb/bolt => github.com/boltdb/bolt v1.3.1
+# github.com/brahma-adshonor/gohook v1.1.9 => github.com/brahma-adshonor/gohook v1.1.9
+github.com/brahma-adshonor/gohook
 # github.com/brahma-adshonor/gohook => github.com/brahma-adshonor/gohook v1.1.9
 # github.com/caddyserver/caddy v1.0.3 => github.com/caddyserver/caddy v1.0.3
 ## explicit
@@ -301,6 +307,8 @@ github.com/coreos/go-systemd/v22/dbus
 # github.com/coreos/pkg => github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
 github.com/coreos/pkg/capnslog
 github.com/coreos/pkg/dlopen
+# github.com/cornelk/hashmap v1.0.1 => github.com/cornelk/hashmap v1.0.1
+github.com/cornelk/hashmap
 # github.com/cornelk/hashmap => github.com/cornelk/hashmap v1.0.1
 # github.com/cpuguy83/go-md2man/v2 v2.0.0 => github.com/cpuguy83/go-md2man/v2 v2.0.0
 ## explicit
@@ -317,6 +325,8 @@ github.com/davecgh/go-spew/spew
 # github.com/daviddengcn/go-colortext v0.0.0-20160507010035-511bcaf42ccd => github.com/daviddengcn/go-colortext v0.0.0-20160507010035-511bcaf42ccd
 github.com/daviddengcn/go-colortext
 # github.com/daviddengcn/go-colortext => github.com/daviddengcn/go-colortext v0.0.0-20160507010035-511bcaf42ccd
+# github.com/dchest/siphash v1.1.0 => github.com/dchest/siphash v1.1.0
+github.com/dchest/siphash
 # github.com/dchest/siphash => github.com/dchest/siphash v1.1.0
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible => github.com/dgrijalva/jwt-go v3.2.0+incompatible
 github.com/dgrijalva/jwt-go
@@ -1268,7 +1278,9 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
+# golang.org/x/arch v0.0.0-20190312162104-788fe5ffcd8c => golang.org/x/arch v0.0.0-20190312162104-788fe5ffcd8c
 # golang.org/x/arch => golang.org/x/arch v0.0.0-20190312162104-788fe5ffcd8c
+golang.org/x/arch/x86/x86asm
 # golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 => golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
 ## explicit
 # golang.org/x/crypto => golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0

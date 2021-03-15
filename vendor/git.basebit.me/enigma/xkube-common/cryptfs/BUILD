@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cryptfs.go",
+        "errors.go",
+    ],
+    importmap = "k8s.io/kubernetes/vendor/git.basebit.me/enigma/xkube-common/cryptfs",
+    importpath = "git.basebit.me/enigma/xkube-common/cryptfs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/git.basebit.me/enigma/sqlfs-go:go_default_library",
+        "//vendor/github.com/cornelk/hashmap:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+    ],
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [
+        ":package-srcs",
+        "//vendor/git.basebit.me/enigma/xkube-common/cryptfs/hook:all-srcs",
+    ],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)
