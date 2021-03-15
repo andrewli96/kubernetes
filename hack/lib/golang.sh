@@ -669,7 +669,28 @@ kube::golang::build_some_binaries() {
       V=2 kube::log::info "Building ${package} without coverage..."
       go build -o "$(kube::golang::outfile_for_binary "${package}" "${platform}")" "${build_args[@]}" "$@"
     done
-   fi
+  fi
+
+  kube::golang::patch_some_binaries_for_mprotect "${platform}"
+}
+
+# Patch output binaries to make its text segment writable on MacOS
+kube::golang::patch_some_binaries_for_mprotect() {
+  if [[ ${GOOS} != "darwin" ]]; then
+    return
+  fi
+
+  local platform=$1
+  local output_path="${KUBE_GOPATH}/bin"
+  if [[ "${platform}" != "${host_platform}" ]]; then
+    output_path="${output_path}/${platform//\//_}"
+  fi
+
+  for x in $(find ${output_path} -name "xkube*" -maxdepth 1 -not -type d); do
+    prog=$x
+    echo "Patching $prog for mprotect"
+    printf '\x07' | dd of=$prog bs=1 seek=160 count=1 conv=notrunc &>/dev/null
+  done
 }
 
 kube::golang::build_binaries_for_platform() {
