@@ -18,5 +18,6 @@ replace (
 	k8s.io/cloud-provider => ../cloud-provider
 	k8s.io/component-base => ../component-base
 	k8s.io/controller-manager => ../controller-manager
+	k8s.io/klog/v2 => k8s.io/klog/v2 v2.4.0
 	k8s.io/kube-controller-manager => ../kube-controller-manager
 )

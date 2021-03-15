@@ -704,7 +704,8 @@ kube::golang::build_binaries_for_platform() {
       -ldflags "${goldflags:-}"
       -tags "${gotags:-}"
     )
-    CGO_ENABLED=0 kube::golang::build_some_binaries "${statics[@]}"
+    # CGO_ENABLED=0 kube::golang::build_some_binaries "${statics[@]}"
+    kube::golang::build_some_binaries "${statics[@]}"
   fi
 
   if [[ "${#nonstatics[@]}" != 0 ]]; then
@@ -786,7 +787,7 @@ kube::golang::build_binaries() {
     # Disable SC2153 for this, as it will throw a warning that the local
     # variable goldflags will exist, and it suggest changing it to this.
     # shellcheck disable=SC2153
-    goldflags="${GOLDFLAGS=-s -w -buildid=} $(kube::version::ldflags)"
+    goldflags="${GOLDFLAGS=-s -w -buildid=} $(kube::version::ldflags) $(xkube::ldflags)"
     goasmflags="-trimpath=${KUBE_ROOT}"
     gogcflags="${GOGCFLAGS:-} -trimpath=${KUBE_ROOT}"
 

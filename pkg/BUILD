@@ -78,6 +78,7 @@ filegroup(
         "//pkg/util:all-srcs",
         "//pkg/volume:all-srcs",
         "//pkg/windows/service:all-srcs",
+        "//pkg/xkube:all-srcs",
     ],
     tags = ["automanaged"],
 )

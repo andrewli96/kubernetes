@@ -63,6 +63,10 @@ KUBE_FASTBUILD := $(KUBE_FASTBUILD)
 # This controls the verbosity of the build.  Higher numbers mean more output.
 KUBE_VERBOSE ?= 1
 
+## xkube related build settings
+XKUBE_ENABLE ?= true
+CGO_ENABLED := 1
+
 define ALL_HELP_INFO
 # Build code.
 #

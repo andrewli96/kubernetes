@@ -202,3 +202,7 @@ kube::realpath() {
   fi
   kube::readlinkdashf "${1}"
 }
+
+
+# xkube related initialization
+source "${KUBE_ROOT}/hack/lib/xkube.sh"

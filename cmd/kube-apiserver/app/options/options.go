@@ -37,6 +37,7 @@ import (
 	kubeoptions "k8s.io/kubernetes/pkg/kubeapiserver/options"
 	kubeletclient "k8s.io/kubernetes/pkg/kubelet/client"
 	"k8s.io/kubernetes/pkg/serviceaccount"
+	xkubeoptions "k8s.io/kubernetes/pkg/xkube/options"
 )
 
 // InsecurePortFlags are dummy flags, they are kept only for compatibility and will be removed in v1.24.
@@ -45,6 +46,7 @@ var InsecurePortFlags = []string{"insecure-port", "port"}
 
 // ServerRunOptions runs a kubernetes api server.
 type ServerRunOptions struct {
+	X                       *xkubeoptions.XOptions
 	GenericServerRunOptions *genericoptions.ServerRunOptions
 	Etcd                    *genericoptions.EtcdOptions
 	SecureServing           *genericoptions.SecureServingOptionsWithLoopback
@@ -97,6 +99,7 @@ type ServerRunOptions struct {
 // NewServerRunOptions creates a new ServerRunOptions object with default parameters
 func NewServerRunOptions() *ServerRunOptions {
 	s := ServerRunOptions{
+		X:                       xkubeoptions.NewXOptions(),
 		GenericServerRunOptions: genericoptions.NewServerRunOptions(),
 		Etcd:                    genericoptions.NewEtcdOptions(storagebackend.NewDefaultConfig(kubeoptions.DefaultEtcdPathPrefix, nil)),
 		SecureServing:           kubeoptions.NewSecureServingOptions(),
@@ -165,6 +168,7 @@ func addDummyInsecureFlags(fs *pflag.FlagSet) {
 
 // Flags returns flags for a specific APIServer by section name
 func (s *ServerRunOptions) Flags() (fss cliflag.NamedFlagSets) {
+	s.X.AddFlags(fss.FlagSet("x"))
 	// Add the generic flags.
 	s.GenericServerRunOptions.AddUniversalFlags(fss.FlagSet("generic"))
 	s.Etcd.AddFlags(fss.FlagSet("etcd"))

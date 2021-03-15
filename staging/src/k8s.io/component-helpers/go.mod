@@ -8,7 +8,7 @@ require (
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/client-go v0.0.0
-	k8s.io/klog/v2 v2.4.0
+	k8s.io/klog/v2 v2.6.0
 	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 )
 
@@ -17,4 +17,5 @@ replace (
 	k8s.io/apimachinery => ../apimachinery
 	k8s.io/client-go => ../client-go
 	k8s.io/component-helpers => ../component-helpers
+	k8s.io/klog/v2 => k8s.io/klog/v2 v2.4.0
 )
