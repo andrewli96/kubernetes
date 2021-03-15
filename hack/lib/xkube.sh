@@ -23,7 +23,7 @@ xkube::gcflags() {
 
   if [[ ${XKUBE_ENABLE} == "true" ]]; then
     # Disable inline for for API hooking
-    gcflags+="-l"
+    gcflags+="all=-l"
   fi
 
   echo "${gcflags[*]-}"

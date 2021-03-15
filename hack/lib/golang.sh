@@ -811,7 +811,7 @@ kube::golang::build_binaries() {
     # shellcheck disable=SC2153
     goldflags="${GOLDFLAGS=-s -w -buildid=} $(kube::version::ldflags) $(xkube::ldflags)"
     goasmflags="-trimpath=${KUBE_ROOT}"
-    gogcflags="${GOGCFLAGS:-} -trimpath=${KUBE_ROOT} $(xkube::gcflags)"
+    gogcflags="${GOGCFLAGS:-} $(xkube::gcflags) -trimpath=${KUBE_ROOT}"
 
     # extract tags if any specified in GOFLAGS
     # shellcheck disable=SC2001
