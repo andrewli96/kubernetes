@@ -11,11 +11,11 @@ cloud.google.com/go/compute/metadata
 # cloud.google.com/go/pubsub => cloud.google.com/go/pubsub v1.2.0
 # cloud.google.com/go/storage => cloud.google.com/go/storage v1.6.0
 # dmitri.shuralyov.com/gpu/mtl => dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9
-# git.basebit.me/enigma/sqlfs-go v0.0.1 => git.basebit.me/enigma/sqlfs-go v0.0.1
+# git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d => git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d
 ## explicit
 git.basebit.me/enigma/sqlfs-go
-# git.basebit.me/enigma/sqlfs-go => git.basebit.me/enigma/sqlfs-go v0.0.1
-# git.basebit.me/enigma/xkube-common => git.basebit.me/enigma/xkube-common v0.0.3
+# git.basebit.me/enigma/sqlfs-go => git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d
+# git.basebit.me/enigma/xkube-common => git.basebit.me/enigma/xkube-common v0.0.5-0.20210315082955-7fee80a208a1
 # github.com/Azure/azure-sdk-for-go v43.0.0+incompatible => github.com/Azure/azure-sdk-for-go v43.0.0+incompatible
 ## explicit
 # github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v43.0.0+incompatible

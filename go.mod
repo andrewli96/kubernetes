@@ -10,7 +10,7 @@ go 1.15
 
 require (
 	bitbucket.org/bertimus9/systemstat v0.0.0-20180207000608-0eeff89b0690
-	git.basebit.me/enigma/sqlfs-go v0.0.1
+	git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d
 	github.com/Azure/azure-sdk-for-go v43.0.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.1
 	github.com/Azure/go-autorest/autorest/adal v0.9.5
@@ -154,8 +154,8 @@ replace (
 	cloud.google.com/go/pubsub => cloud.google.com/go/pubsub v1.2.0
 	cloud.google.com/go/storage => cloud.google.com/go/storage v1.6.0
 	dmitri.shuralyov.com/gpu/mtl => dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9
-	git.basebit.me/enigma/sqlfs-go => git.basebit.me/enigma/sqlfs-go v0.0.1
-	git.basebit.me/enigma/xkube-common => git.basebit.me/enigma/xkube-common v0.0.3
+	git.basebit.me/enigma/sqlfs-go => git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d
+	git.basebit.me/enigma/xkube-common => git.basebit.me/enigma/xkube-common v0.0.5-0.20210315082955-7fee80a208a1
 	github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v43.0.0+incompatible
 	github.com/Azure/go-ansiterm => github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v14.2.0+incompatible
