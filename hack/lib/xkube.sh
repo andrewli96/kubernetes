@@ -16,3 +16,15 @@ xkube::ldflags() {
   # The -ldflags parameter takes a single string, so join the output.
   echo "${ldflags[*]-}"
 }
+
+
+xkube::gcflags() {
+  local -a gcflags
+
+  if [[ ${XKUBE_ENABLE} == "true" ]]; then
+    # Disable inline for for API hooking
+    gcflags+="-l"
+  fi
+
+  echo "${gcflags[*]-}"
+}

@@ -645,6 +645,7 @@ kube::golang::delete_coverage_dummy_test() {
 # producing the required unit test files and then cleaning up after itself.
 # Non-covered binaries are then built using go install as usual.
 kube::golang::build_some_binaries() {
+  echo  "BUILD ARGS: ${build_args[@]}"
   if [[ -n "${KUBE_BUILD_WITH_COVERAGE:-}" ]]; then
     for package in "$@"; do
       if kube::golang::is_instrumented_package "${package}"; then
@@ -810,7 +811,7 @@ kube::golang::build_binaries() {
     # shellcheck disable=SC2153
     goldflags="${GOLDFLAGS=-s -w -buildid=} $(kube::version::ldflags) $(xkube::ldflags)"
     goasmflags="-trimpath=${KUBE_ROOT}"
-    gogcflags="${GOGCFLAGS:-} -trimpath=${KUBE_ROOT}"
+    gogcflags="${GOGCFLAGS:-} -trimpath=${KUBE_ROOT} $(xkube::gcflags)"
 
     # extract tags if any specified in GOFLAGS
     # shellcheck disable=SC2001
