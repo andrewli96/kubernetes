@@ -55,7 +55,9 @@ import (
 	"k8s.io/kubernetes/pkg/scheduler/framework/runtime"
 	"k8s.io/kubernetes/pkg/scheduler/metrics/resources"
 	"k8s.io/kubernetes/pkg/scheduler/profile"
+	"k8s.io/kubernetes/pkg/xkube"
 
+	"git.basebit.me/enigma/xkube-common/cryptfs"
 	_ "git.basebit.me/enigma/xkube-common/cryptfs"
 	_ "git.basebit.me/enigma/xkube-common/cryptfs/hook"
 )
@@ -126,6 +128,21 @@ func runCommand(cmd *cobra.Command, opts *options.Options, registryOptions ...Op
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	err := xkube.Setup(opts.X, []cryptfs.MatchPattern{
+		{Mode: cryptfs.MATCH_EXACT, Value: opts.Authentication.RemoteKubeConfigFile},
+		{Mode: cryptfs.MATCH_EXACT, Value: opts.Authorization.RemoteKubeConfigFile},
+		{Mode: cryptfs.MATCH_EXACT, Value: opts.ComponentConfig.ClientConnection.Kubeconfig},
+		/* TODO(angus): more patterns to check */
+	})
+	if err != nil {
+		return err
+	}
+	klog.Infoln("xkube loaded")
+	defer func() {
+		xkube.Close()
+		klog.Infoln("xube unloaded")
+	}()
 
 	cc, sched, err := Setup(ctx, opts, registryOptions...)
 	if err != nil {
