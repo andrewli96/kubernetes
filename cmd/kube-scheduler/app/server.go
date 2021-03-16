@@ -121,6 +121,40 @@ for more information about scheduling and the kube-scheduler component.`,
 	return cmd
 }
 
+func getCryptfsHookedFiles(opts *options.Options) ([]cryptfs.MatchPattern, error) {
+	var patterns []cryptfs.MatchPattern
+
+	if opts.SecureServing.SecureServingOptions.ServerCert.CertDirectory != "" {
+		return nil, fmt.Errorf("Option --cert-dir disabled, use --tls-cert-file and --tls-private-key-file instead")
+	}
+	for _, path := range []string{
+		opts.ConfigFile,
+		opts.WriteConfigTo,
+
+		// opts.SecureServing.SecureServingOptions.ServerCert.CertDirectory,
+		opts.SecureServing.SecureServingOptions.ServerCert.CertKey.CertFile,
+		opts.SecureServing.SecureServingOptions.ServerCert.CertKey.KeyFile,
+
+		opts.Authentication.RemoteKubeConfigFile,
+		opts.Authentication.ClientCert.ClientCA,
+		opts.Authentication.RequestHeader.ClientCAFile,
+
+		opts.Authorization.RemoteKubeConfigFile,
+
+		opts.ComponentConfig.ClientConnection.Kubeconfig,
+		opts.Deprecated.PolicyConfigFile,
+	} {
+		if path != "" {
+			patterns = append(patterns, cryptfs.MatchPattern{
+				Mode:  cryptfs.MATCH_EXACT,
+				Value: path,
+			})
+		}
+	}
+
+	return patterns, nil
+}
+
 // runCommand runs the scheduler.
 func runCommand(cmd *cobra.Command, opts *options.Options, registryOptions ...Option) error {
 	verflag.PrintAndExitIfRequested()
@@ -129,20 +163,22 @@ func runCommand(cmd *cobra.Command, opts *options.Options, registryOptions ...Op
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err := xkube.Setup(opts.X, []cryptfs.MatchPattern{
-		{Mode: cryptfs.MATCH_EXACT, Value: opts.Authentication.RemoteKubeConfigFile},
-		{Mode: cryptfs.MATCH_EXACT, Value: opts.Authorization.RemoteKubeConfigFile},
-		{Mode: cryptfs.MATCH_EXACT, Value: opts.ComponentConfig.ClientConnection.Kubeconfig},
-		/* TODO(angus): more patterns to check */
-	})
+	patterns, err := getCryptfsHookedFiles(opts)
 	if err != nil {
 		return err
 	}
-	klog.Infoln("xkube loaded")
-	defer func() {
-		xkube.Close()
-		klog.Infoln("xube unloaded")
-	}()
+	if len(patterns) > 0 {
+		if err := xkube.Setup(opts.X, patterns); err != nil {
+			return err
+		}
+		klog.Infoln("xkube loaded")
+		defer func() {
+			xkube.Close()
+			klog.Infoln("xube unloaded")
+		}()
+	} else {
+		klog.Warningf("None of file hooked, xkube not enabled")
+	}
 
 	cc, sched, err := Setup(ctx, opts, registryOptions...)
 	if err != nil {

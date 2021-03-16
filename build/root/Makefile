@@ -64,7 +64,7 @@ KUBE_FASTBUILD := $(KUBE_FASTBUILD)
 KUBE_VERBOSE ?= 1
 
 ## xkube related build settings
-XKUBE_ENABLE ?= true
+XKUBE_ENABLED ?= 1
 CGO_ENABLED := 1
 
 define ALL_HELP_INFO

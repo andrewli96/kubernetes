@@ -18,17 +18,18 @@ func getConfigFileKey() []byte {
 
 func Setup(options *options.XOptions, patterns []cryptfs.MatchPattern) error {
 	if !internal.XkubeEnabled {
-		if options.XConfigFile == "" {
-			return fmt.Errorf("X config file not set")
-		}
-		err := hook.Load(options.XConfigFile, getConfigFileKey(), patterns)
-		if err != nil {
-			return err
-		}
+		return nil
 	}
-	return nil
+	if options.XConfigFile == "" {
+		return fmt.Errorf("X config file not set")
+	}
+	return hook.Load(options.XConfigFile, getConfigFileKey(), patterns)
 }
 
 func Close() error {
+	if !internal.XkubeEnabled {
+		return nil
+	}
+
 	return hook.Unload()
 }
