@@ -60,17 +60,21 @@ type CryptFs struct {
 
 func (fs *CryptFs) Hooked(path string) (matched bool) {
 	path = normpath(path)
+	found := false
 	for _, x := range fs.HookedPatterns {
 		switch x.Mode {
 		case MATCH_EXACT:
-			return x.Value == path
+			found = x.Value == path
 		case MATCH_PARENT:
-			return isParentDir(x.Value, path)
+			found = isParentDir(x.Value, path)
 		default:
 			panic(fmt.Sprintf("unknown match mode=%d", x.Mode))
 		}
+		if found {
+			break
+		}
 	}
-	return false
+	return found
 }
 
 func (fs *CryptFs) Close() error {

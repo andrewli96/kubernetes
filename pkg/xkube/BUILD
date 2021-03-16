@@ -8,6 +8,9 @@ go_library(
     deps = [
         "//pkg/xkube/internal:go_default_library",
         "//pkg/xkube/options:go_default_library",
+        "//vendor/git.basebit.me/enigma/xkube-common/cryptfs:go_default_library",
+        "//vendor/git.basebit.me/enigma/xkube-common/cryptfs/hook:go_default_library",
+        "//vendor/k8s.io/klog/v2:go_default_library",
     ],
 )
 
