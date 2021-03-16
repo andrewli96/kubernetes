@@ -171,11 +171,7 @@ func runCommand(cmd *cobra.Command, opts *options.Options, registryOptions ...Op
 		if err := xkube.Setup(opts.X, patterns); err != nil {
 			return err
 		}
-		klog.Infoln("xkube loaded")
-		defer func() {
-			xkube.Close()
-			klog.Infoln("xube unloaded")
-		}()
+		defer xkube.Close()
 	} else {
 		klog.Warningf("None of file hooked, xkube not enabled")
 	}

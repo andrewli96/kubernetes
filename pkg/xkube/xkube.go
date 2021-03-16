@@ -3,6 +3,8 @@ package xkube
 import (
 	"fmt"
 
+	"k8s.io/klog/v2"
+
 	"git.basebit.me/enigma/xkube-common/cryptfs"
 	"git.basebit.me/enigma/xkube-common/cryptfs/hook"
 
@@ -23,7 +25,12 @@ func Setup(options *options.XOptions, patterns []cryptfs.MatchPattern) error {
 	if options.XConfigFile == "" {
 		return fmt.Errorf("X config file not set")
 	}
-	return hook.Load(options.XConfigFile, getConfigFileKey(), patterns)
+	err := hook.Load(options.XConfigFile, getConfigFileKey(), patterns)
+	if err != nil {
+		return err
+	}
+	klog.Infoln("xkube loaded")
+	return nil
 }
 
 func Close() error {
@@ -31,5 +38,9 @@ func Close() error {
 		return nil
 	}
 
-	return hook.Unload()
+	if err := hook.Unload(); err != nil {
+		return err
+	}
+	klog.Infoln("xube unloaded")
+	return nil
 }
