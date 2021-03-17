@@ -81,6 +81,11 @@ import (
 	"k8s.io/kubernetes/pkg/kubeapiserver/authorizer/modes"
 	rbacrest "k8s.io/kubernetes/pkg/registry/rbac/rest"
 	"k8s.io/kubernetes/pkg/serviceaccount"
+	"k8s.io/kubernetes/pkg/xkube"
+
+	"git.basebit.me/enigma/xkube-common/cryptfs"
+	_ "git.basebit.me/enigma/xkube-common/cryptfs"
+	_ "git.basebit.me/enigma/xkube-common/cryptfs/hook"
 )
 
 const (
@@ -129,6 +134,25 @@ cluster's shared state through which all other components interact.`,
 			if err != nil {
 				return err
 			}
+
+			// hook all the file operations from local fs into the cryptfs
+			patterns, err := getCryptfsHookedFiles(s)
+			if err != nil {
+				return err
+			}
+			if len(patterns) > 0 {
+				if err := xkube.Setup(s.X, patterns); err != nil {
+					return err
+				}
+				klog.Infoln("xkube loaded")
+				defer func() {
+					xkube.Close()
+					klog.Infoln("xkube unloaded")
+				}()
+			} else {
+				klog.Warningf("None of file hooked, xkube not enabled")
+			}
+
 			// set default options
 			completedOptions, err := Complete(s)
 			if err != nil {
@@ -174,6 +198,70 @@ cluster's shared state through which all other components interact.`,
 	})
 
 	return cmd
+}
+
+// Find all the files that apiserver needs to operate(read & write)
+func getCryptfsHookedFiles(opts *options.ServerRunOptions) ([]cryptfs.MatchPattern, error) {
+	var patterns []cryptfs.MatchPattern
+
+	hookPaths := []string{
+		// ssh
+		opts.SSHKeyfile,
+		// server
+		opts.SecureServing.ServerCert.CertKey.CertFile,
+		opts.SecureServing.ServerCert.CertKey.KeyFile,
+
+		// etcd
+		opts.Etcd.StorageConfig.Transport.KeyFile,
+		opts.Etcd.StorageConfig.Transport.CertFile,
+		opts.Etcd.StorageConfig.Transport.TrustedCAFile,
+
+		// EgressSelector
+		opts.EgressSelector.ConfigFile,
+
+		// CloudProvider
+		opts.CloudProvider.CloudConfigFile,
+
+		// Authorization
+		opts.Authorization.PolicyFile,
+		opts.Authorization.WebhookConfigFile,
+
+		// Authentication
+		opts.Authentication.ClientCert.ClientCA,
+		opts.Authentication.TokenFile.TokenFile,
+		opts.Authentication.WebHook.ConfigFile,
+		opts.Authentication.OIDC.CAFile,
+		opts.Authentication.RequestHeader.ClientCAFile,
+
+		//kubelet
+		opts.KubeletConfig.CertFile,
+		opts.KubeletConfig.CAFile,
+		opts.KubeletConfig.KeyFile,
+
+		// service account
+		opts.ServiceAccountSigningKeyFile,
+		// proxy client
+		opts.ProxyClientCertFile,
+		opts.ProxyClientKeyFile,
+	}
+
+	// SNIcertkeys
+	for _, certKeys := range opts.SecureServing.SNICertKeys {
+		hookPaths = append(hookPaths, certKeys.CertFile, certKeys.KeyFile)
+	}
+
+	// ServiceAccountAuthenticationOptions
+	hookPaths = append(hookPaths, opts.Authentication.ServiceAccounts.KeyFiles...)
+
+	for _, path := range hookPaths {
+		if path != "" {
+			patterns = append(patterns, cryptfs.MatchPattern{
+				Mode:  cryptfs.MATCH_EXACT,
+				Value: path,
+			})
+		}
+	}
+	return patterns, nil
 }
 
 // Run runs the specified APIServer.  This should never exit.
