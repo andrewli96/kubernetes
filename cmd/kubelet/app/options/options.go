@@ -41,6 +41,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/config"
 	utilflag "k8s.io/kubernetes/pkg/util/flag"
 	utiltaints "k8s.io/kubernetes/pkg/util/taints"
+	xkubeoptions "k8s.io/kubernetes/pkg/xkube/options"
 )
 
 const defaultRootDir = "/var/lib/kubelet"
@@ -53,6 +54,8 @@ const defaultRootDir = "/var/lib/kubelet"
 // In general, please try to avoid adding flags or configuration fields,
 // we already have a confusingly large amount of them.
 type KubeletFlags struct {
+	X *xkubeoptions.XOptions
+
 	KubeConfig          string
 	BootstrapKubeconfig string
 
@@ -181,6 +184,7 @@ func NewKubeletFlags() *KubeletFlags {
 	}
 
 	return &KubeletFlags{
+		X:                       xkubeoptions.NewXOptions(),
 		ContainerRuntimeOptions: *NewContainerRuntimeOptions(),
 		CertDirectory:           "/var/lib/kubelet/pki",
 		RootDirectory:           defaultRootDir,
@@ -319,6 +323,7 @@ func (f *KubeletFlags) AddFlags(mainfs *pflag.FlagSet) {
 		mainfs.AddFlagSet(fs)
 	}()
 
+	f.X.AddFlags(fs)
 	f.ContainerRuntimeOptions.AddFlags(fs)
 	f.addOSFlags(fs)
 

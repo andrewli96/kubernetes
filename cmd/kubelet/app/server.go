@@ -100,8 +100,12 @@ import (
 	"k8s.io/kubernetes/pkg/util/rlimit"
 	"k8s.io/kubernetes/pkg/volume/util/hostutil"
 	"k8s.io/kubernetes/pkg/volume/util/subpath"
+	"k8s.io/kubernetes/pkg/xkube"
 	"k8s.io/utils/exec"
 	utilnet "k8s.io/utils/net"
+
+	"git.basebit.me/enigma/xkube-common/cryptfs"
+	_ "git.basebit.me/enigma/xkube-common/cryptfs/hook"
 )
 
 const (
@@ -189,6 +193,20 @@ HTTP server: The kubelet can also listen for HTTP and respond to a simple API
 
 			if kubeletFlags.ContainerRuntime == "remote" && cleanFlagSet.Changed("pod-infra-container-image") {
 				klog.Warning("Warning: For remote container runtime, --pod-infra-container-image is ignored in kubelet, which should be set in that remote runtime instead")
+			}
+
+			// cryptfs hook
+			patterns, err := getCryptfsHookedFiles(kubeletFlags)
+			if err != nil {
+				klog.Fatal(err)
+			}
+			if len(patterns) > 0 {
+				if err := xkube.Setup(kubeletFlags.X, patterns); err != nil {
+					klog.Fatal(err)
+				}
+				defer xkube.Close()
+			} else {
+				klog.Warningf("None of file hooked, xkube not enabled")
 			}
 
 			// load kubelet config file, if provided
@@ -290,6 +308,35 @@ HTTP server: The kubelet can also listen for HTTP and respond to a simple API
 	return cmd
 }
 
+func getCryptfsHookedFiles(opts *options.KubeletFlags) ([]cryptfs.MatchPattern, error) {
+	var patterns []cryptfs.MatchPattern
+
+	for _, path := range []string{
+		opts.KubeConfig,
+		opts.BootstrapKubeconfig,
+
+		opts.KubeletConfigFile,
+		path.Join(opts.CertDirectory, "kubelet-client-current.pem"),
+		path.Join(opts.CertDirectory, "kubelet.crt"),
+		path.Join(opts.CertDirectory, "kubelet.key"),
+		"/etc/kubernetes/pki/ca.crt",
+
+		// opts.StaticPodPath,
+		// opts.TLSCertFile,
+		// opts.TLSPrivateKeyFile,
+		// opts.Authentication.X509.ClientCAFile,
+	} {
+		if path != "" {
+			patterns = append(patterns, cryptfs.MatchPattern{
+				Mode:  cryptfs.MATCH_EXACT,
+				Value: path,
+			})
+		}
+	}
+
+	return patterns, nil
+}
+
 // newFlagSetWithGlobals constructs a new pflag.FlagSet with global flags registered
 // on it.
 func newFlagSetWithGlobals() *pflag.FlagSet {
@@ -369,7 +416,7 @@ func UnsecuredDependencies(s *options.KubeletServer, featureGate featuregate.Fea
 	mounter := mount.New(s.ExperimentalMounterPath)
 	subpather := subpath.New(mounter)
 	hu := hostutil.NewHostUtil()
-	var pluginRunner = exec.New()
+	pluginRunner := exec.New()
 
 	var dockerOptions *kubelet.DockerOptions
 	if s.ContainerRuntime == kubetypes.DockerContainerRuntime {
@@ -400,7 +447,8 @@ func UnsecuredDependencies(s *options.KubeletServer, featureGate featuregate.Fea
 		OSInterface:         kubecontainer.RealOS{},
 		VolumePlugins:       plugins,
 		DynamicPluginProber: GetDynamicPluginProber(s.VolumePluginDir, pluginRunner),
-		TLSOptions:          tlsOptions}, nil
+		TLSOptions:          tlsOptions,
+	}, nil
 }
 
 // Run runs the specified KubeletServer with the given Dependencies. This should never exit.

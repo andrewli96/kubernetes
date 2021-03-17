@@ -41,6 +41,6 @@ func Close() error {
 	if err := hook.Unload(); err != nil {
 		return err
 	}
-	klog.Infoln("xube unloaded")
+	klog.Infoln("xkube unloaded")
 	return nil
 }

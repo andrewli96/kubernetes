@@ -29,6 +29,7 @@ import (
 	_ "k8s.io/component-base/metrics/prometheus/restclient"
 	_ "k8s.io/component-base/metrics/prometheus/version" // for version metric registration
 	"k8s.io/kubernetes/cmd/kubelet/app"
+	_ "k8s.io/kubernetes/pkg/xkube"
 )
 
 func main() {
