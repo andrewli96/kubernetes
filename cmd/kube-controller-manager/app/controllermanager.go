@@ -69,6 +69,11 @@ import (
 	kubectrlmgrconfig "k8s.io/kubernetes/pkg/controller/apis/config"
 	serviceaccountcontroller "k8s.io/kubernetes/pkg/controller/serviceaccount"
 	"k8s.io/kubernetes/pkg/serviceaccount"
+	"k8s.io/kubernetes/pkg/xkube"
+
+	"git.basebit.me/enigma/xkube-common/cryptfs"
+	_ "git.basebit.me/enigma/xkube-common/cryptfs"
+	_ "git.basebit.me/enigma/xkube-common/cryptfs/hook"
 )
 
 const (
@@ -116,12 +121,33 @@ controller, and serviceaccounts controller.`,
 			verflag.PrintAndExitIfRequested()
 			cliflag.PrintFlags(cmd.Flags())
 
+			// hook all the file operations from local fs into the cryptfs
+			patterns, err := getCryptfsHookedFiles(s)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%v\n", err)
+				os.Exit(1)
+			}
+			if len(patterns) > 0 {
+				if err := xkube.Setup(s.X, patterns); err != nil {
+					fmt.Fprintf(os.Stderr, "%v\n", err)
+					os.Exit(1)
+				}
+				klog.Infoln("xkube loaded")
+				defer func() {
+					xkube.Close()
+					klog.Infoln("xkube unloaded")
+				}()
+			} else {
+				klog.Warningf("None of file hooked, xkube not enabled")
+			}
+
 			c, err := s.Config(KnownControllers(), ControllersDisabledByDefault.List())
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 				os.Exit(1)
 			}
 
+			// run command
 			if err := Run(c.Complete(), wait.NeverStop); err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 				os.Exit(1)
@@ -158,6 +184,60 @@ controller, and serviceaccounts controller.`,
 	})
 
 	return cmd
+}
+
+// Find all the files that controller manager needs to operate(read & write)
+func getCryptfsHookedFiles(opts *options.KubeControllerManagerOptions) ([]cryptfs.MatchPattern, error) {
+	var patterns []cryptfs.MatchPattern
+
+	fmt.Printf("%#v", opts)
+
+	hookPaths := []string{
+		// kubeconfig
+		opts.Kubeconfig,
+
+		// Authentication
+		opts.Authentication.RemoteKubeConfigFile,
+		opts.Authentication.RequestHeader.ClientCAFile,
+
+		// SecureServing
+		opts.SecureServing.ServerCert.CertKey.CertFile,
+		opts.SecureServing.ServerCert.CertKey.KeyFile,
+
+		// csrSignningControllerConfiguration
+		opts.CSRSigningController.ClusterSigningCertFile,
+		opts.CSRSigningController.ClusterSigningKeyFile,
+		opts.CSRSigningController.KubeletClientSignerConfiguration.CertFile,
+		opts.CSRSigningController.KubeletClientSignerConfiguration.KeyFile,
+		opts.CSRSigningController.KubeletServingSignerConfiguration.CertFile,
+		opts.CSRSigningController.KubeletServingSignerConfiguration.KeyFile,
+		opts.CSRSigningController.KubeAPIServerClientSignerConfiguration.CertFile,
+		opts.CSRSigningController.KubeAPIServerClientSignerConfiguration.KeyFile,
+		opts.CSRSigningController.LegacyUnknownSignerConfiguration.CertFile,
+		opts.CSRSigningController.LegacyUnknownSignerConfiguration.KeyFile,
+
+		// SAControllerConfiguration
+		opts.SAController.RootCAFile,
+		opts.SAController.ServiceAccountKeyFile,
+
+		// Authorization
+		opts.Authorization.RemoteKubeConfigFile,
+	}
+
+	// SNI certkeys
+	for _, certKey := range opts.SecureServing.SNICertKeys {
+		hookPaths = append(hookPaths, certKey.CertFile, certKey.KeyFile)
+	}
+
+	for _, path := range hookPaths {
+		if path != "" {
+			patterns = append(patterns, cryptfs.MatchPattern{
+				Mode:  cryptfs.MATCH_EXACT,
+				Value: path,
+			})
+		}
+	}
+	return patterns, nil
 }
 
 // ResyncPeriod returns a function which generates a duration each time it is
