@@ -72,7 +72,6 @@ import (
 	"k8s.io/kubernetes/pkg/xkube"
 
 	"git.basebit.me/enigma/xkube-common/cryptfs"
-	_ "git.basebit.me/enigma/xkube-common/cryptfs"
 	_ "git.basebit.me/enigma/xkube-common/cryptfs/hook"
 )
 
@@ -124,6 +123,7 @@ controller, and serviceaccounts controller.`,
 			// hook all the file operations from local fs into the cryptfs
 			patterns, err := getCryptfsHookedFiles(s)
 			if err != nil {
+				klog.Fatal("Failed to setup xkube %s.\n", err)
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 				os.Exit(1)
 			}
@@ -132,10 +132,8 @@ controller, and serviceaccounts controller.`,
 					fmt.Fprintf(os.Stderr, "%v\n", err)
 					os.Exit(1)
 				}
-				klog.Infoln("xkube loaded")
 				defer func() {
 					xkube.Close()
-					klog.Infoln("xkube unloaded")
 				}()
 			} else {
 				klog.Warningf("None of file hooked, xkube not enabled")
@@ -190,8 +188,9 @@ controller, and serviceaccounts controller.`,
 func getCryptfsHookedFiles(opts *options.KubeControllerManagerOptions) ([]cryptfs.MatchPattern, error) {
 	var patterns []cryptfs.MatchPattern
 
-	fmt.Printf("%#v", opts)
-
+	if opts.SecureServing.ServerCert.CertDirectory != "" {
+		return nil, fmt.Errorf("Option --cert-dir disabled, use --tls-cert-file and --tls-private-key-file instead")
+	}
 	hookPaths := []string{
 		// kubeconfig
 		opts.Kubeconfig,
