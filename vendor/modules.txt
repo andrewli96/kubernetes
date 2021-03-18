@@ -11,13 +11,13 @@ cloud.google.com/go/compute/metadata
 # cloud.google.com/go/pubsub => cloud.google.com/go/pubsub v1.2.0
 # cloud.google.com/go/storage => cloud.google.com/go/storage v1.6.0
 # dmitri.shuralyov.com/gpu/mtl => dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9
-# git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d => git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d
+# git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210318012258-a47c010ef35d => git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d
 ## explicit
 git.basebit.me/enigma/sqlfs-go
 # git.basebit.me/enigma/sqlfs-go => git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d
-# git.basebit.me/enigma/xkube-common v0.0.5-0.20210316101914-c238f7a87830 => git.basebit.me/enigma/xkube-common v0.0.5-0.20210316101914-c238f7a87830
+# git.basebit.me/enigma/xkube-common v0.0.5 => git.basebit.me/enigma/xkube-common v0.0.5
 ## explicit
-# git.basebit.me/enigma/xkube-common => git.basebit.me/enigma/xkube-common v0.0.5-0.20210316101914-c238f7a87830
+# git.basebit.me/enigma/xkube-common => git.basebit.me/enigma/xkube-common v0.0.5
 git.basebit.me/enigma/xkube-common/cryptfs
 git.basebit.me/enigma/xkube-common/cryptfs/hook
 # github.com/Azure/azure-sdk-for-go v43.0.0+incompatible => github.com/Azure/azure-sdk-for-go v43.0.0+incompatible

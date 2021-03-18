@@ -33,6 +33,7 @@ go_library(
         "//pkg/kubelet/types:go_default_library",
         "//pkg/util/flag:go_default_library",
         "//pkg/util/taints:go_default_library",
+        "//pkg/xkube/options:go_default_library",
         "//staging/src/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
         "//staging/src/k8s.io/apimachinery/pkg/util/sets:go_default_library",
         "//staging/src/k8s.io/apiserver/pkg/util/feature:go_default_library",

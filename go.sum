@@ -10,8 +10,8 @@ cloud.google.com/go/storage v1.6.0/go.mod h1:N7U0C8pVQ/+NIKOBQyamJIeKQKkZ+mxpohl
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d h1:/nK2I1OignA/gdgWXTvoVo8EYq+8CHnLdJ42l/mX7j0=
 git.basebit.me/enigma/sqlfs-go v0.0.3-0.20210315082726-9b8493dd6d7d/go.mod h1:cPUkAFWQ7XH3m0LKQkncJYqjjvgRKrTtD+p+PlnNMyw=
-git.basebit.me/enigma/xkube-common v0.0.5-0.20210316101914-c238f7a87830 h1:fqVw1TYXDEkNGgoUpasM13Eob97yN469bzHM8AlDiHo=
-git.basebit.me/enigma/xkube-common v0.0.5-0.20210316101914-c238f7a87830/go.mod h1:U/OUu1uHnxTRcpoB64+fTtwAqfU3+OiKcl/I+yrEUsQ=
+git.basebit.me/enigma/xkube-common v0.0.5 h1:7twxvcNyNCDdZcV4ZdQAy/2qOli5XhZQxpxss2dbBBM=
+git.basebit.me/enigma/xkube-common v0.0.5/go.mod h1:dymj6YoHvDkNETL06/T88EEEERbgMuP6c08r9sLU4M8=
 github.com/Azure/azure-sdk-for-go v43.0.0+incompatible h1:/wSNCu0e6EsHFR4Qa3vBEBbicaprEHMyyga9g8RTULI=
 github.com/Azure/azure-sdk-for-go v43.0.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=

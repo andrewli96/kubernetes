@@ -27,9 +27,11 @@ func hookedSyscallOpen(name string, mode int, perm uint32) (fd int, err error) {
 		name = filepath.Join(wd, name)
 	}
 	name = filepath.Clean(name)
-	klog.V(9).InfoS("xkube:cryptfs: Open file", "name", name, "mode", mode, "perm", perm)
+	klog.V(8).InfoS("xkube:cryptfs: Open file", "name", name, "mode", mode, "perm", perm)
 
 	if _fs.Hooked(name) {
+		_fs.SFuckingMu.Lock()
+		defer _fs.SFuckingMu.Unlock()
 		f, err := _fs.SFS.Open(name, mode)
 		if err != nil {
 			return -1, err
@@ -51,13 +53,15 @@ func hookedSyscallOpenTramp(name string, mode int, perm uint32) (fd int, err err
 
 // Syscall.Close
 func hookedSyscallClose(fd int) error {
-	klog.V(9).InfoS("xkube:cryptfs: Close", "fd", fd)
+	klog.V(8).InfoS("xkube:cryptfs: Close", "fd", fd)
 	err := hookedSyscallCloseTramp(fd)
 	if err != nil {
 		return err
 	}
 	sf, ok := _fs.SFiles.Get(fd)
 	if ok {
+		_fs.SFuckingMu.Lock()
+		defer _fs.SFuckingMu.Unlock()
 		sf.(*sqlfs.File).Close()
 		_fs.SFiles.Del(fd)
 	}
@@ -71,7 +75,6 @@ func hookedSyscallCloseTramp(fd int) error {
 
 // Syscall.Stat
 func hookedSyscallStat(path string, stat *syscall.Stat_t) (err error) {
-
 	if !filepath.IsAbs(path) {
 		wd, err := os.Getwd()
 		if err != nil {
@@ -83,6 +86,8 @@ func hookedSyscallStat(path string, stat *syscall.Stat_t) (err error) {
 	klog.V(9).InfoS("xkube:cryptfs: Stat", "path", path)
 
 	if _fs.Hooked(path) {
+		_fs.SFuckingMu.Lock()
+		defer _fs.SFuckingMu.Unlock()
 		f, err := _fs.SFS.Stat(path)
 		if err != nil {
 			return err

@@ -14,6 +14,8 @@ import (
 func hookedSyscallMkdir(path string, mode uint32) (err error) {
 	klog.V(9).InfoS("xkube:cryptfs: Mkdir", "path", path, "mode", mode)
 	if _fs.Hooked(path) {
+		_fs.SFuckingMu.Lock()
+		defer _fs.SFuckingMu.Unlock()
 		return _fs.SFS.Mkdir(path, mode)
 	}
 	return hookedSyscallMkdirTramp(path, mode)
@@ -28,6 +30,8 @@ func hookedSyscallMkdirTramp(path string, mode uint32) (err error) {
 func hookedSyscallRmdir(path string) (err error) {
 	klog.V(9).InfoS("xkube:cryptfs: Rmdir", "path", path)
 	if _fs.Hooked(path) {
+		_fs.SFuckingMu.Lock()
+		defer _fs.SFuckingMu.Unlock()
 		return _fs.SFS.Rmdir(path)
 	}
 	return hookedSyscallRmdirTramp(path)
@@ -71,6 +75,8 @@ func hookedFileReaddir(file *os.File, n int) (dentries []os.FileInfo, err error)
 	if !ok {
 		return hookedFileReaddirTramp(file, n)
 	}
+	_fs.SFuckingMu.Lock()
+	defer _fs.SFuckingMu.Unlock()
 	// TODO(angus): Enhance sqlfs-go to support stateful readdir
 	if n <= 0 {
 		// TODO(angus): Read all entries

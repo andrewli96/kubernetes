@@ -8,6 +8,31 @@ var (
 	_fs *cryptfs.CryptFs
 )
 
+func LoadWithPlainSQLite(db string, hookedPatterns []cryptfs.MatchPattern) error {
+	if _fs != nil {
+		return cryptfs.ErrLoaded
+	}
+	fs, err := cryptfs.NewWithPlainSQLite(db, hookedPatterns)
+	if err != nil {
+		return err
+	}
+	_fs = fs
+
+	if err := hookFileOps(); err != nil {
+		Unload()
+		return err
+	}
+	// if err := hookDirOps(); err != nil {
+	// 	Unload()
+	// 	return err
+	// }
+	if err := hookCommonOps(); err != nil {
+		Unload()
+		return err
+	}
+	return nil
+}
+
 func Load(db string, password []byte, hookedPatterns []cryptfs.MatchPattern) error {
 	if _fs != nil {
 		return cryptfs.ErrLoaded

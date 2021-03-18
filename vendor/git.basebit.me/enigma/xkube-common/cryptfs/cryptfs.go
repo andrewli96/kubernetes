@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/cornelk/hashmap"
 	"github.com/pkg/errors"
@@ -26,11 +27,33 @@ type MatchPattern struct {
 	Value string
 }
 
+func NewWithPlainSQLite(db string, hookedPatterns []MatchPattern) (*CryptFs, error) {
+	sfs, err := sqlfs.Open(db)
+	if err != nil {
+		return nil, errors.Wrap(err, "open sqlfs failed")
+	}
+	defer func() {
+		if err != nil {
+			sfs.Close()
+		}
+	}()
+	return newCryptFS(sfs, hookedPatterns)
+}
+
 func New(db string, password []byte, hookedPatterns []MatchPattern) (*CryptFs, error) {
 	sfs, err := sqlfs.OpenWithPassword(db, password)
 	if err != nil {
 		return nil, errors.Wrap(err, "open sqlfs failed")
 	}
+	defer func() {
+		if err != nil {
+			sfs.Close()
+		}
+	}()
+	return newCryptFS(sfs, hookedPatterns)
+}
+
+func newCryptFS(sfs *sqlfs.FS, hookedPatterns []MatchPattern) (*CryptFs, error) {
 	var pats []MatchPattern
 	for _, pat := range hookedPatterns {
 		if pat.Mode != MATCH_EXACT {
@@ -54,8 +77,10 @@ func New(db string, password []byte, hookedPatterns []MatchPattern) (*CryptFs, e
 type CryptFs struct {
 	HookedPatterns []MatchPattern
 
-	SFS    *sqlfs.FS
-	SFiles hashmap.HashMap
+	SFS        *sqlfs.FS
+	SFuckingMu sync.Mutex // REMOVE it if sqlfs race condition resolved
+
+	SFiles hashmap.HashMap // A lockfree hash map
 }
 
 func (fs *CryptFs) Hooked(path string) (matched bool) {
@@ -78,6 +103,9 @@ func (fs *CryptFs) Hooked(path string) (matched bool) {
 }
 
 func (fs *CryptFs) Close() error {
+	fs.SFuckingMu.Lock()
+	defer fs.SFuckingMu.Unlock()
+
 	if err := fs.SFS.Close(); err != nil {
 		return err
 	}
@@ -89,6 +117,9 @@ func (fs *CryptFs) ReadFile(filename string) ([]byte, error) {
 	if !fs.Hooked(filename) {
 		return ioutil.ReadFile(filename)
 	}
+
+	fs.SFuckingMu.Lock()
+	defer fs.SFuckingMu.Unlock()
 
 	sf, err := fs.SFS.Open(filename, os.O_RDONLY)
 	if err != nil {
