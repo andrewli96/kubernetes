@@ -84,7 +84,6 @@ import (
 	"k8s.io/kubernetes/pkg/xkube"
 
 	"git.basebit.me/enigma/xkube-common/cryptfs"
-	_ "git.basebit.me/enigma/xkube-common/cryptfs"
 	_ "git.basebit.me/enigma/xkube-common/cryptfs/hook"
 )
 
@@ -142,12 +141,11 @@ cluster's shared state through which all other components interact.`,
 			}
 			if len(patterns) > 0 {
 				if err := xkube.Setup(s.X, patterns); err != nil {
+					klog.Fatalf("Failed to setup xkube. %s\n", err)
 					return err
 				}
-				klog.Infoln("xkube loaded")
 				defer func() {
 					xkube.Close()
-					klog.Infoln("xkube unloaded")
 				}()
 			} else {
 				klog.Warningf("None of file hooked, xkube not enabled")
@@ -204,6 +202,9 @@ cluster's shared state through which all other components interact.`,
 func getCryptfsHookedFiles(opts *options.ServerRunOptions) ([]cryptfs.MatchPattern, error) {
 	var patterns []cryptfs.MatchPattern
 
+	if opts.SecureServing.ServerCert.CertDirectory != "" {
+		return nil, fmt.Errorf("Option --cert-dir disabled, use --tls-cert-file and --tls-private-key-file instead")
+	}
 	hookPaths := []string{
 		// ssh
 		opts.SSHKeyfile,

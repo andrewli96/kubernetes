@@ -96,13 +96,20 @@ type ServerRunOptions struct {
 	ShowHiddenMetricsForVersion string
 }
 
+// Disable the default certDirectory value
+func xSecureServiceOptions() *genericoptions.SecureServingOptionsWithLoopback {
+	originalSecureServingOptions := kubeoptions.NewSecureServingOptions()
+	originalSecureServingOptions.ServerCert.CertDirectory = ""
+	return originalSecureServingOptions
+}
+
 // NewServerRunOptions creates a new ServerRunOptions object with default parameters
 func NewServerRunOptions() *ServerRunOptions {
 	s := ServerRunOptions{
 		X:                       xkubeoptions.NewXOptions(),
 		GenericServerRunOptions: genericoptions.NewServerRunOptions(),
 		Etcd:                    genericoptions.NewEtcdOptions(storagebackend.NewDefaultConfig(kubeoptions.DefaultEtcdPathPrefix, nil)),
-		SecureServing:           kubeoptions.NewSecureServingOptions(),
+		SecureServing:           xSecureServiceOptions(),
 		Audit:                   genericoptions.NewAuditOptions(),
 		Features:                genericoptions.NewFeatureOptions(),
 		Admission:               kubeoptions.NewAdmissionOptions(),
