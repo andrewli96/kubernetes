@@ -100,7 +100,7 @@ kube::golang::server_image_targets() {
 
 IFS=" " read -ra KUBE_SERVER_IMAGE_TARGETS <<< "$(kube::golang::server_image_targets)"
 readonly KUBE_SERVER_IMAGE_TARGETS
-readonly KUBE_SERVER_IMAGE_BINARIES=("${KUBE_SERVER_IMAGE_TARGETS[@]##*/}")
+readonly KUBE_SERVER_IMAGE_BINARIES=("${KUBE_SERVER_IMAGE_TARGETS[@]/*\//x}")
 
 # The set of conformance targets we build docker image for
 kube::golang::conformance_image_targets() {
@@ -416,6 +416,13 @@ kube::golang::set_platform_envs() {
         ;;
     esac
   fi
+
+  # if CC is defined for platform then always enable it
+  ccenv=$(echo "$platform" | awk -F/ '{print "KUBE_" toupper($1) "_" toupper($2) "_CC"}')
+  if [ -n "${!ccenv-}" ]; then
+    export CGO_ENABLED=1
+    export CC="${!ccenv}"
+  fi
 }
 
 kube::golang::unset_platform_envs() {
@@ -662,13 +669,13 @@ kube::golang::build_some_binaries() {
           "${package}"
       else
         V=2 kube::log::info "Building ${package} without coverage..."
-        go build -o "$(kube::golang::outfile_for_binary "${package}" "${platform}")" "${build_args[@]}" "$@"
+        go build -o "$(kube::golang::outfile_for_binary "${package}" "${platform}")" "${build_args[@]}" "${package}"
       fi
     done
   else
     for package in "$@"; do
       V=2 kube::log::info "Building ${package} without coverage..."
-      go build -o "$(kube::golang::outfile_for_binary "${package}" "${platform}")" "${build_args[@]}" "$@"
+      go build -o "$(kube::golang::outfile_for_binary "${package}" "${platform}")" "${build_args[@]}" "${package}"
     done
   fi
 

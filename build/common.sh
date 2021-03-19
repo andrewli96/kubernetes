@@ -87,6 +87,8 @@ readonly KUBE_RSYNC_PORT="${KUBE_RSYNC_PORT:-}"
 # mapped to KUBE_RSYNC_PORT via docker networking.
 readonly KUBE_CONTAINER_RSYNC_PORT=8730
 
+readonly XKUBE_BASE_IMAGE_REGISTRY="${XKUBE_BASE_IMAGE_REGISTRY:-docker-reg.basebit.me:5000/k8s/base}"
+
 # Get the set of master binaries that run in Docker (on Linux)
 # Entry format is "<name-of-binary>,<base-image>".
 # Binaries are placed in /usr/local/bin inside the image.
@@ -94,14 +96,15 @@ readonly KUBE_CONTAINER_RSYNC_PORT=8730
 # $1 - server architecture
 kube::build::get_docker_wrapped_binaries() {
   local debian_iptables_version=buster-v1.3.0
+  local debian_base_version=buster-v1.4.0
   local go_runner_version=buster-v2.3.1
   ### If you change any of these lists, please also update DOCKERIZED_BINARIES
   ### in build/BUILD. And kube::golang::server_image_targets
   local targets=(
-    "kube-apiserver,${KUBE_BASE_IMAGE_REGISTRY}/go-runner:${go_runner_version}"
-    "kube-controller-manager,${KUBE_BASE_IMAGE_REGISTRY}/go-runner:${go_runner_version}"
-    "kube-scheduler,${KUBE_BASE_IMAGE_REGISTRY}/go-runner:${go_runner_version}"
-    "kube-proxy,${KUBE_BASE_IMAGE_REGISTRY}/debian-iptables:${debian_iptables_version}"
+    "xkube-apiserver,${XKUBE_BASE_IMAGE_REGISTRY}/xkube-debian-base:${debian_base_version}"
+    "xkube-controller-manager,${XKUBE_BASE_IMAGE_REGISTRY}/xkube-debian-base:${debian_base_version}"
+    "xkube-scheduler,${XKUBE_BASE_IMAGE_REGISTRY}/xkube-debian-base:${debian_base_version}"
+    "xkube-proxy,${KUBE_BASE_IMAGE_REGISTRY}/debian-iptables:${debian_iptables_version}"
   )
 
   echo "${targets[@]}"
