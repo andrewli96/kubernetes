@@ -11,7 +11,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//vendor/git.basebit.me/enigma/sqlfs-go:go_default_library",
-        "//vendor/github.com/cornelk/hashmap:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
     ],
 )

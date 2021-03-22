@@ -1,24 +1,17 @@
 package hook
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"syscall"
 
 	"github.com/brahma-adshonor/gohook"
 	"k8s.io/klog/v2"
-
-	"git.basebit.me/enigma/sqlfs-go"
-
-	"git.basebit.me/enigma/xkube-common/cryptfs"
 )
 
 // Syscall.Open
 func hookedSyscallOpen(name string, mode int, perm uint32) (fd int, err error) {
-	if mode&syscall.O_DIRECTORY != 0 {
-		return -1, cryptfs.ErrUnimplemented
-	}
-
 	if !filepath.IsAbs(name) {
 		wd, err := os.Getwd()
 		if err != nil {
@@ -27,23 +20,41 @@ func hookedSyscallOpen(name string, mode int, perm uint32) (fd int, err error) {
 		name = filepath.Join(wd, name)
 	}
 	name = filepath.Clean(name)
-	klog.V(8).InfoS("xkube:cryptfs: Open file", "name", name, "mode", mode, "perm", perm)
+	if !_fs.Hooked(name) {
+		return hookedSyscallOpenTramp(name, mode, perm)
+	}
 
-	if _fs.Hooked(name) {
-		_fs.SFuckingMu.Lock()
-		defer _fs.SFuckingMu.Unlock()
+	klog.V(8).InfoS("xkube:cryptfs: Open file", "name", name, "mode", mode, "perm", perm)
+	dir := false
+	if st, err := os.Stat(name); err != nil {
+		if !os.IsNotExist(err) {
+			return -1, err
+		}
+		if mode&os.O_CREATE == 0 {
+			return -1, err
+		}
+	} else {
+		dir = st.IsDir()
+	}
+	_fs.SFuckingMu.Lock()
+	defer _fs.SFuckingMu.Unlock()
+	sfile := &_SFile{
+		Dir:    dir,
+		DirEOF: false,
+	}
+	if !dir {
 		f, err := _fs.SFS.Open(name, mode)
 		if err != nil {
 			return -1, err
 		}
-		fd, err := hookedSyscallOpenTramp("/dev/null", os.O_RDONLY, 0)
-		if err != nil {
-			return fd, err
-		}
-		_fs.SFiles.Set(fd, f)
-		return fd, nil
+		sfile.File = f
 	}
-	return hookedSyscallOpenTramp(name, mode, perm)
+	fd, err = hookedSyscallOpenTramp("/dev/null", os.O_RDONLY, 0)
+	if err != nil {
+		return fd, err
+	}
+	_sfiles.Set(fd, sfile)
+	return fd, nil
 }
 
 //go:noinline
@@ -58,12 +69,15 @@ func hookedSyscallClose(fd int) error {
 	if err != nil {
 		return err
 	}
-	sf, ok := _fs.SFiles.Get(fd)
+	v, ok := _sfiles.Get(fd)
 	if ok {
+		sfile := v.(*_SFile)
 		_fs.SFuckingMu.Lock()
 		defer _fs.SFuckingMu.Unlock()
-		sf.(*sqlfs.File).Close()
-		_fs.SFiles.Del(fd)
+		if !sfile.Dir {
+			sfile.File.Close()
+		}
+		_sfiles.Del(fd)
 	}
 	return nil
 }
@@ -76,9 +90,12 @@ func hookedSyscallCloseTramp(fd int) error {
 // Syscall.Stat
 func hookedSyscallStat(path string, stat *syscall.Stat_t) (err error) {
 	if !filepath.IsAbs(path) {
-		wd, err := os.Getwd()
+		wd, err := syscall.Getwd()
 		if err != nil {
 			return err
+		}
+		if !filepath.IsAbs(wd) {
+			panic(fmt.Sprintf("Getwd: Expected absolute path but get %s", wd))
 		}
 		path = filepath.Join(wd, path)
 	}

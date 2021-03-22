@@ -7,8 +7,6 @@ import (
 
 	"github.com/brahma-adshonor/gohook"
 	"k8s.io/klog/v2"
-
-	"git.basebit.me/enigma/sqlfs-go"
 )
 
 // Syscall.Unlink
@@ -30,7 +28,7 @@ func hookedSyscallUnlinkTramp(path string) (err error) {
 // // Syscall.Unlinkat
 // func hookedSyscallUnlinkat(dirfd int, path string) error {
 // 	klog.V(9).InfoS("xkube:cryptfs: Unlinkat", "dirfd", dirfd, "path", path)
-// 	sf, ok := _fs.SFiles.Get(dirfd)
+// 	sf, ok := _sfiles.Get(dirfd)
 // 	if !ok {
 // 		return hookedSyscallUnlinkatTramp(dirfd, path)
 // 	}
@@ -48,14 +46,18 @@ func hookedSyscallUnlinkTramp(path string) (err error) {
 
 // Syscall.Read
 func hookedSyscallRead(fd int, b []byte) (n int, err error) {
-	sf, ok := _fs.SFiles.Get(fd)
+	v, ok := _sfiles.Get(fd)
 	if !ok {
 		return hookedSyscallReadTramp(fd, b)
+	}
+	sfile := v.(*_SFile)
+	if sfile.Dir {
+		return -1, os.ErrInvalid
 	}
 	klog.V(9).InfoS("xkube:cryptfs: Read(hooked)", "fd", fd)
 	_fs.SFuckingMu.Lock()
 	defer _fs.SFuckingMu.Unlock()
-	return sf.(*sqlfs.File).Read(b)
+	return sfile.File.Read(b)
 }
 
 //go:noinline
@@ -65,14 +67,18 @@ func hookedSyscallReadTramp(fd int, b []byte) (n int, err error) {
 
 // Syscall.Pread
 func hookedSyscallPread(fd int, b []byte, offset int64) (n int, err error) {
-	sf, ok := _fs.SFiles.Get(fd)
+	v, ok := _sfiles.Get(fd)
 	if !ok {
 		return hookedSyscallPreadTramp(fd, b, offset)
+	}
+	sfile := v.(*_SFile)
+	if sfile.Dir {
+		return -1, os.ErrInvalid
 	}
 	klog.V(9).InfoS("xkube:cryptfs: Pread(hooked)", "fd", fd, "offset", offset)
 	_fs.SFuckingMu.Lock()
 	defer _fs.SFuckingMu.Unlock()
-	return sf.(*sqlfs.File).ReadAt(b, offset)
+	return sfile.File.ReadAt(b, offset)
 }
 
 //go:noinline
@@ -82,9 +88,13 @@ func hookedSyscallPreadTramp(fd int, b []byte, offset int64) (n int, err error) 
 
 // Syscall.Write
 func hookedSyscallWrite(fd int, b []byte) (n int, err error) {
-	sf, ok := _fs.SFiles.Get(fd)
+	v, ok := _sfiles.Get(fd)
 	if !ok {
 		return hookedSyscallWriteTramp(fd, b)
+	}
+	sfile := v.(*_SFile)
+	if sfile.Dir {
+		return -1, os.ErrInvalid
 	}
 	// Cannot simply call Infof/Println for infinite recursion
 	if klog.V(9).Enabled() {
@@ -93,7 +103,7 @@ func hookedSyscallWrite(fd int, b []byte) (n int, err error) {
 	}
 	_fs.SFuckingMu.Lock()
 	defer _fs.SFuckingMu.Unlock()
-	return sf.(*sqlfs.File).Write(b)
+	return sfile.File.Write(b)
 }
 
 //go:noinline
@@ -103,9 +113,13 @@ func hookedSyscallWriteTramp(fd int, b []byte) (n int, err error) {
 
 // Syscall.Pwrite
 func hookedSyscallPwrite(fd int, b []byte, offset int64) (n int, err error) {
-	sf, ok := _fs.SFiles.Get(fd)
+	v, ok := _sfiles.Get(fd)
 	if !ok {
 		return hookedSyscallPwriteTramp(fd, b, offset)
+	}
+	sfile := v.(*_SFile)
+	if sfile.Dir {
+		return -1, os.ErrInvalid
 	}
 	// Cannot simply call Infof/Println for potential infinite recursion
 	if klog.V(9).Enabled() {
@@ -114,7 +128,7 @@ func hookedSyscallPwrite(fd int, b []byte, offset int64) (n int, err error) {
 	}
 	_fs.SFuckingMu.Lock()
 	defer _fs.SFuckingMu.Unlock()
-	return sf.(*sqlfs.File).WriteAt(b, offset)
+	return sfile.File.WriteAt(b, offset)
 }
 
 //go:noinline
@@ -124,14 +138,18 @@ func hookedSyscallPwriteTramp(fd int, b []byte, offset int64) (n int, err error)
 
 // Syscall.Seek
 func hookedSyscallSeek(fd int, offset int64, whence int) (ret int64, err error) {
-	sf, ok := _fs.SFiles.Get(fd)
+	v, ok := _sfiles.Get(fd)
 	if !ok {
 		return hookedSyscallSeekTramp(fd, offset, whence)
+	}
+	sfile := v.(*_SFile)
+	if sfile.Dir {
+		return -1, os.ErrInvalid
 	}
 	klog.V(9).InfoS("xkube:cryptfs: Seek(hooked)", "fd", fd, "offset", offset, "whence", whence)
 	_fs.SFuckingMu.Lock()
 	defer _fs.SFuckingMu.Unlock()
-	return sf.(*sqlfs.File).Seek(offset, whence)
+	return sfile.File.Seek(offset, whence)
 }
 
 //go:noinline

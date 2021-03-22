@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 
-	"github.com/cornelk/hashmap"
 	"github.com/pkg/errors"
 
 	"git.basebit.me/enigma/sqlfs-go"
@@ -56,9 +56,6 @@ func New(db string, password []byte, hookedPatterns []MatchPattern) (*CryptFs, e
 func newCryptFS(sfs *sqlfs.FS, hookedPatterns []MatchPattern) (*CryptFs, error) {
 	var pats []MatchPattern
 	for _, pat := range hookedPatterns {
-		if pat.Mode != MATCH_EXACT {
-			return nil, ErrUnimplemented
-		}
 		if !filepath.IsAbs(pat.Value) {
 			return nil, errors.Wrapf(filepath.ErrBadPattern, "invalid pattern=%v", pat)
 		}
@@ -79,8 +76,6 @@ type CryptFs struct {
 
 	SFS        *sqlfs.FS
 	SFuckingMu sync.Mutex // REMOVE it if sqlfs race condition resolved
-
-	SFiles hashmap.HashMap // A lockfree hash map
 }
 
 func (fs *CryptFs) Hooked(path string) (matched bool) {
@@ -110,6 +105,16 @@ func (fs *CryptFs) Close() error {
 		return err
 	}
 	return nil
+}
+
+// ReadFile reads contents from encrypted file.
+func (fs *CryptFs) ReadDir(path string) ([]os.DirEntry, error) {
+	if !fs.Hooked(path) {
+		return os.ReadDir(path)
+	}
+	fs.SFuckingMu.Lock()
+	defer fs.SFuckingMu.Unlock()
+	return fs.SFS.Readdir(path)
 }
 
 // ReadFile reads contents from encrypted file.
@@ -158,7 +163,7 @@ func (fs *CryptFs) ReadFile(filename string) ([]byte, error) {
 
 func normpath(path string) string {
 	if !filepath.IsAbs(path) {
-		wd, err := os.Getwd()
+		wd, err := syscall.Getwd()
 		if err != nil {
 			panic(err)
 		}

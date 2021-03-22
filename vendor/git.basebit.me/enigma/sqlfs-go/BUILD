@@ -5,6 +5,9 @@ go_library(
     srcs = [
         "file.go",
         "sqlfs.go",
+        "stat.go",
+        "stat_darwin.go",
+        "stat_linux.go",
     ],
     cgo = True,
     clinkopts = ["-lsqlfs-1.0"],

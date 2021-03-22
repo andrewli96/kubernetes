@@ -1,4 +1,4 @@
-package hook
+package sqlfs
 
 import (
 	"os"
@@ -8,10 +8,10 @@ import (
 
 func fillFileStatFromSys(fs *fileStat) {
 	fs.size = fs.sys.Size
-	fs.modTime = timespecToTime(fs.sys.Mtimespec)
+	fs.modTime = timespecToTime(fs.sys.Mtim)
 	fs.mode = os.FileMode(fs.sys.Mode & 0777)
 	switch fs.sys.Mode & syscall.S_IFMT {
-	case syscall.S_IFBLK, syscall.S_IFWHT:
+	case syscall.S_IFBLK:
 		fs.mode |= os.ModeDevice
 	case syscall.S_IFCHR:
 		fs.mode |= os.ModeDevice | os.ModeCharDevice
@@ -43,5 +43,5 @@ func timespecToTime(ts syscall.Timespec) time.Time {
 
 // For testing.
 func atime(fi os.FileInfo) time.Time {
-	return timespecToTime(fi.Sys().(*syscall.Stat_t).Atimespec)
+	return timespecToTime(fi.Sys().(*syscall.Stat_t).Atim)
 }

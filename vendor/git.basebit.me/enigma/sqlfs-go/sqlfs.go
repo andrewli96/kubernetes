@@ -13,6 +13,8 @@ import "C"
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"syscall"
 	"unsafe"
 
@@ -29,7 +31,7 @@ func Open(db string) (*FS, error) {
 	var fs *C.sqlfs_t
 
 	rc := C.sqlfs_open(cDB, &fs)
-	if rc != 0 {
+	if rc == 0 {
 		return nil, fmt.Errorf("open sqlfs error")
 	}
 
@@ -92,6 +94,31 @@ func readdirnames_filler(buf unsafe.Pointer, name *C.char, stbuf *C.struct_stat,
 	}
 	*names = append(*names, str)
 	return 0
+}
+
+// ReadDir reads the named directory.
+func (fs *FS) Readdir(path string) ([]os.DirEntry, error) {
+	names, err := fs.Readdirnames(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var dentries []os.DirEntry
+	for _, name := range names {
+		var st syscall.Stat_t
+		cPath := C.CString(filepath.Join(path, name))
+		rc := C.sqlfs_proc_getattr(fs.fs, cPath, (*C.struct_stat)(unsafe.Pointer(&st)))
+		C.free(unsafe.Pointer(cPath))
+		if rc != 0 {
+			err := geterrno(rc)
+			if err == syscall.ENOENT {
+				continue
+			}
+			return nil, err
+		}
+		dentries = append(dentries, newDirEntry(name, st))
+	}
+	return dentries, nil
 }
 
 // ReadDir reads the named directory.

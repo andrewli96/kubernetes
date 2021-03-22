@@ -1,11 +1,25 @@
 package hook
 
 import (
+	"os"
+
+	"github.com/cornelk/hashmap"
+
+	"git.basebit.me/enigma/sqlfs-go"
 	"git.basebit.me/enigma/xkube-common/cryptfs"
 )
 
+type _SFile struct {
+	Dir      bool
+	File     *sqlfs.File
+	Dentries []os.DirEntry
+	DirEOF   bool
+}
+
 var (
-	_fs *cryptfs.CryptFs
+	_fs     *cryptfs.CryptFs
+	_sfiles hashmap.HashMap // A lockfree hash map
+
 )
 
 func LoadWithPlainSQLite(db string, hookedPatterns []cryptfs.MatchPattern) error {
@@ -47,10 +61,10 @@ func Load(db string, password []byte, hookedPatterns []cryptfs.MatchPattern) err
 		Unload()
 		return err
 	}
-	// if err := hookDirOps(); err != nil {
-	// 	Unload()
-	// 	return err
-	// }
+	if err := hookDirOps(); err != nil {
+		Unload()
+		return err
+	}
 	if err := hookCommonOps(); err != nil {
 		Unload()
 		return err
@@ -63,7 +77,7 @@ func Unload() error {
 		return nil
 	}
 	unhookCommonOps()
-	// unhookDirOps()
+	unhookDirOps()
 	unhookFileOps()
 
 	if err := _fs.Close(); err != nil {
