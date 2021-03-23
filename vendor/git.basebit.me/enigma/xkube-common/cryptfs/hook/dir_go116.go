@@ -66,6 +66,24 @@ func hookedFileReadDirTramp(file *os.File, n int) (dentries []os.DirEntry, err e
 	return nil, nil
 }
 
+// File.Readdir
+func hookedFileReaddir(file *os.File, n int) (fis []os.FileInfo, err error) {
+	dentries, err := hookedFileReadDir(file, n)
+	for _, x := range dentries {
+		fi, err := x.Info()
+		if err != nil {
+			return nil, err
+		}
+		fis = append(fis, fi)
+	}
+	return fis, err
+}
+
+//go:noinline
+func hookedFileReaddirTramp(file *os.File, n int) (dentries []os.FileInfo, err error) {
+	return nil, nil
+}
+
 func hookDirOpsEx() error {
 	var err error
 
@@ -74,6 +92,11 @@ func hookDirOpsEx() error {
 			unhookDirOpsEx()
 		}
 	}()
+
+	err = gohook.HookMethod(_dummy, "Readdir", hookedFileReaddir, hookedFileReaddirTramp)
+	if err != nil {
+		return err
+	}
 
 	err = gohook.HookMethod(_dummy, "ReadDir", hookedFileReadDir, hookedFileReadDirTramp)
 	if err != nil {
@@ -87,5 +110,6 @@ func hookDirOpsEx() error {
 
 func unhookDirOpsEx() {
 	gohook.UnHookMethod(_dummy, "ReadDir")
+	gohook.UnHookMethod(_dummy, "Readdir")
 	klog.V(1).Infoln("cryptfs directory ops_ex unhooked")
 }

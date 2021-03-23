@@ -9,6 +9,8 @@ go_library(
         "dir_go116.go",
         "file.go",
         "hook.go",
+        "hook_go115.go",
+        "hook_go116.go",
     ],
     importmap = "k8s.io/kubernetes/vendor/git.basebit.me/enigma/xkube-common/cryptfs/hook",
     importpath = "git.basebit.me/enigma/xkube-common/cryptfs/hook",
