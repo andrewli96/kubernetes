@@ -96,14 +96,14 @@ func readdirnames_filler(buf unsafe.Pointer, name *C.char, stbuf *C.struct_stat,
 	return 0
 }
 
-// ReadDir reads the named directory.
-func (fs *FS) Readdir(path string) ([]os.DirEntry, error) {
+// Readdir reads the named directory.
+func (fs *FS) Readdir(path string) ([]os.FileInfo, error) {
 	names, err := fs.Readdirnames(path)
 	if err != nil {
 		return nil, err
 	}
 
-	var dentries []os.DirEntry
+	var fis []os.FileInfo
 	for _, name := range names {
 		var st syscall.Stat_t
 		cPath := C.CString(filepath.Join(path, name))
@@ -116,12 +116,12 @@ func (fs *FS) Readdir(path string) ([]os.DirEntry, error) {
 			}
 			return nil, err
 		}
-		dentries = append(dentries, newDirEntry(name, st))
+		fis = append(fis, newFileStat(name, st))
 	}
-	return dentries, nil
+	return fis, nil
 }
 
-// ReadDir reads the named directory.
+// Readdirnames reads the named directory.
 func (fs *FS) Readdirnames(path string) ([]string, error) {
 	cPath := C.CString(path)
 	defer C.free(unsafe.Pointer(cPath))
@@ -302,6 +302,10 @@ func (fs *FS) Statfs(path string) (*syscall.Statfs_t, error) {
 		return nil, geterrno(rc)
 	}
 	return &stbuf, nil
+}
+
+func (fs *FS) Create(path string) (*File, error) {
+	return fs.Open(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC)
 }
 
 func (fs *FS) Open(path string, flags int) (*File, error) {

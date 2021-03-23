@@ -4,6 +4,8 @@ go_library(
     name = "go_default_library",
     srcs = [
         "file.go",
+        "readdir_go116.go",
+        "removeall.go",
         "sqlfs.go",
         "stat.go",
         "stat_darwin.go",
