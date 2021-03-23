@@ -85,6 +85,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/cm/cpuset"
 	"k8s.io/kubernetes/pkg/kubelet/config"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
+	"k8s.io/kubernetes/pkg/kubelet/cri/remote"
 	"k8s.io/kubernetes/pkg/kubelet/eviction"
 	evictionapi "k8s.io/kubernetes/pkg/kubelet/eviction/api"
 	dynamickubeletconfig "k8s.io/kubernetes/pkg/kubelet/kubeletconfig"
@@ -320,6 +321,11 @@ func getCryptfsHookedFiles(opts *options.KubeletFlags) ([]cryptfs.MatchPattern, 
 		path.Join(opts.CertDirectory, "kubelet.crt"),
 		path.Join(opts.CertDirectory, "kubelet.key"),
 		"/etc/kubernetes/pki/ca.crt",
+
+		// cri tls
+		remote.DefaulCriRemoteTLSCert,
+		remote.DefaulCriRemoteTLSKey,
+		remote.DefaulCriRemoteTLSRootCA,
 
 		// opts.StaticPodPath,
 		// opts.TLSCertFile,
@@ -1234,7 +1240,6 @@ func startKubelet(k kubelet.Bootstrap, podCfg *config.PodConfig, kubeCfg *kubele
 	if enableServer {
 		go k.ListenAndServe(net.ParseIP(kubeCfg.Address), uint(kubeCfg.Port), kubeDeps.TLSOptions, kubeDeps.Auth,
 			enableCAdvisorJSONEndpoints, kubeCfg.EnableDebuggingHandlers, kubeCfg.EnableContentionProfiling, kubeCfg.EnableSystemLogHandler)
-
 	}
 	if kubeCfg.ReadOnlyPort > 0 {
 		go k.ListenAndServeReadOnly(net.ParseIP(kubeCfg.Address), uint(kubeCfg.ReadOnlyPort), enableCAdvisorJSONEndpoints)
