@@ -9,6 +9,26 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// // Syscall.Unlinkat
+// func hookedSyscallUnlinkat(dirfd int, path string) error {
+// 	sf, ok := _sfiles.Get(dirfd)
+// 	if !ok {
+// 		return hookedSyscallUnlinkatTramp(dirfd, path)
+// 	}
+// 	klog.V(9).InfoS("xkube:cryptfs: Unlinkat", "dirfd", dirfd, "path", path)
+// 	_fs.SFuckingMu.Lock()
+// 	defer _fs.SFuckingMu.Unlock()
+// 	_ = sf
+// 	// TODO(angus): Enhance sqlfs
+// 	// return cryptfs.ErrUnimplemented
+// 	return nil
+// }
+
+// //go:noinline
+// func hookedSyscallUnlinkatTramp(dirfd int, path string) error {
+// 	return nil
+// }
+
 // Syscall.Mkdir
 func hookedSyscallMkdir(path string, mode uint32) (err error) {
 	klog.V(9).InfoS("xkube:cryptfs: Mkdir", "path", path, "mode", mode)
@@ -41,13 +61,13 @@ func hookedSyscallRmdirTramp(path string) (err error) {
 	return nil
 }
 
-// File.ReadDir
-func hookedFileReadDir(file *os.File, n int) (dentries []os.DirEntry, err error) {
+// File.Readdir
+func hookedFileReaddir(file *os.File, n int) (fis []os.FileInfo, err error) {
 	// ATTENTION HERE: the lookup key(fd) should be of the exact same type with key in hashmap
 	fd := int(file.Fd())
 	v, ok := _sfiles.Get(fd)
 	if !ok {
-		return hookedFileReadDirTramp(file, n)
+		return hookedFileReaddirTramp(file, n)
 	}
 	sfile := v.(*_SFile)
 	if !sfile.Dir {
@@ -60,57 +80,36 @@ func hookedFileReadDir(file *os.File, n int) (dentries []os.DirEntry, err error)
 
 	_fs.SFuckingMu.Lock()
 	defer _fs.SFuckingMu.Unlock()
-	if len(sfile.Dentries) == 0 {
-		dents, err := _fs.SFS.Readdir(file.Name())
+	if len(sfile.FileInfos) == 0 {
+		xs, err := _fs.SFS.Readdir(file.Name())
 		if err != nil {
 			return nil, err
 		}
-		sfile.Dentries = dents
+		sfile.FileInfos = xs
 	}
 	if n <= 0 {
-		for _, x := range sfile.Dentries {
-			dentries = append(dentries, x)
+		for _, x := range sfile.FileInfos {
+			fis = append(fis, x)
 		}
-		sfile.Dentries = make([]os.DirEntry, 0)
+		sfile.FileInfos = make([]os.FileInfo, 0)
 		sfile.DirEOF = true
 		// When n <= 0, returned error should be nil instead of io.EOF
-		return dentries, nil
+		return fis, nil
 	}
 
-	if n > len(sfile.Dentries) {
-		n = len(sfile.Dentries)
+	if n > len(sfile.FileInfos) {
+		n = len(sfile.FileInfos)
 	}
-	for _, x := range sfile.Dentries[:n] {
-		dentries = append(dentries, x)
+	for _, x := range sfile.FileInfos[:n] {
+		fis = append(fis, x)
 	}
-	sfile.Dentries = sfile.Dentries[n:]
-	sfile.DirEOF = len(sfile.Dentries) == 0
+	sfile.FileInfos = sfile.FileInfos[n:]
+	sfile.DirEOF = len(sfile.FileInfos) == 0
 	err = nil
 	if sfile.DirEOF {
 		err = io.EOF
 	}
-	return dentries, err
-}
-
-//go:noinline
-func hookedFileReadDirTramp(file *os.File, n int) (dentries []os.DirEntry, err error) {
-	return nil, nil
-}
-
-// File.Readdir
-func hookedFileReaddir(file *os.File, n int) (fis []os.FileInfo, err error) {
-	dentries, err := hookedFileReadDir(file, n)
-	if err != nil {
-		return nil, err
-	}
-	for _, x := range dentries {
-		fi, err := x.Info()
-		if err != nil {
-			return nil, err
-		}
-		fis = append(fis, fi)
-	}
-	return fis, nil
+	return fis, err
 }
 
 //go:noinline

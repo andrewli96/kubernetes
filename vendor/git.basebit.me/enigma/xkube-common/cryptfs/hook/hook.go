@@ -10,10 +10,11 @@ import (
 )
 
 type _SFile struct {
-	Dir      bool
-	File     *sqlfs.File
-	Dentries []os.DirEntry
-	DirEOF   bool
+	Dir       bool
+	File      *sqlfs.File
+	FileInfos []os.FileInfo // For Go 1.15 and below
+	Dentries  []os.DirEntry // For Go 1.16+
+	DirEOF    bool
 }
 
 var (
@@ -36,10 +37,10 @@ func LoadWithPlainSQLite(db string, hookedPatterns []cryptfs.MatchPattern) error
 		Unload()
 		return err
 	}
-	// if err := hookDirOps(); err != nil {
-	// 	Unload()
-	// 	return err
-	// }
+	if err := hookDirOps(); err != nil {
+		Unload()
+		return err
+	}
 	if err := hookCommonOps(); err != nil {
 		Unload()
 		return err

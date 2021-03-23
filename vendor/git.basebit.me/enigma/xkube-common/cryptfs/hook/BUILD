@@ -5,6 +5,8 @@ go_library(
     srcs = [
         "common.go",
         "dir.go",
+        "dir_go115.go",
+        "dir_go116.go",
         "file.go",
         "hook.go",
     ],

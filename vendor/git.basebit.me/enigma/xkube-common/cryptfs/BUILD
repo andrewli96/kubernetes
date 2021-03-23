@@ -4,6 +4,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "cryptfs.go",
+        "cryptfs_go116.go",
         "errors.go",
     ],
     importmap = "k8s.io/kubernetes/vendor/git.basebit.me/enigma/xkube-common/cryptfs",

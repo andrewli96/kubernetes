@@ -107,10 +107,10 @@ func (fs *CryptFs) Close() error {
 	return nil
 }
 
-// ReadFile reads contents from encrypted file.
-func (fs *CryptFs) ReadDir(path string) ([]os.DirEntry, error) {
+// Readdir reads named directory.
+func (fs *CryptFs) Readdir(path string) ([]os.FileInfo, error) {
 	if !fs.Hooked(path) {
-		return os.ReadDir(path)
+		return ioutil.ReadDir(path)
 	}
 	fs.SFuckingMu.Lock()
 	defer fs.SFuckingMu.Unlock()

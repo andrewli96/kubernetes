@@ -11,38 +11,19 @@ import (
 
 // Syscall.Unlink
 func hookedSyscallUnlink(path string) (err error) {
-	klog.V(9).InfoS("xkube:cryptfs: Unlink", "path", path)
-	if _fs.Hooked(path) {
-		_fs.SFuckingMu.Lock()
-		defer _fs.SFuckingMu.Unlock()
-		return _fs.SFS.Unlink(path)
+	if !_fs.Hooked(path) {
+		return hookedSyscallUnlinkTramp(path)
 	}
-	return hookedSyscallUnlinkTramp(path)
+	klog.V(9).InfoS("xkube:cryptfs: Unlink", "path", path)
+	_fs.SFuckingMu.Lock()
+	defer _fs.SFuckingMu.Unlock()
+	return _fs.SFS.Unlink(path)
 }
 
 //go:noinline
 func hookedSyscallUnlinkTramp(path string) (err error) {
 	return nil
 }
-
-// // Syscall.Unlinkat
-// func hookedSyscallUnlinkat(dirfd int, path string) error {
-// 	klog.V(9).InfoS("xkube:cryptfs: Unlinkat", "dirfd", dirfd, "path", path)
-// 	sf, ok := _sfiles.Get(dirfd)
-// 	if !ok {
-// 		return hookedSyscallUnlinkatTramp(dirfd, path)
-// 	}
-// _fs.SFuckingMu.Lock()
-// defer _fs.SFuckingMu.Unlock()
-// 	_ = sf
-// 	// TODO(angus): Enhance sqlfs
-// 	return cryptfs.ErrUnimplemented
-// }
-
-// //go:noinline
-// func hookedSyscallUnlinkatTramp(dirfd int, path string) error {
-// 	return nil
-// }
 
 // Syscall.Read
 func hookedSyscallRead(fd int, b []byte) (n int, err error) {

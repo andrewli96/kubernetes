@@ -64,13 +64,13 @@ func hookedSyscallOpenTramp(name string, mode int, perm uint32) (fd int, err err
 
 // Syscall.Close
 func hookedSyscallClose(fd int) error {
-	klog.V(8).InfoS("xkube:cryptfs: Close", "fd", fd)
 	err := hookedSyscallCloseTramp(fd)
 	if err != nil {
 		return err
 	}
 	v, ok := _sfiles.Get(fd)
 	if ok {
+		klog.V(8).InfoS("xkube:cryptfs: Close", "fd", fd)
 		sfile := v.(*_SFile)
 		_fs.SFuckingMu.Lock()
 		defer _fs.SFuckingMu.Unlock()
@@ -100,23 +100,50 @@ func hookedSyscallStat(path string, stat *syscall.Stat_t) (err error) {
 		path = filepath.Join(wd, path)
 	}
 	path = filepath.Clean(path)
-	klog.V(9).InfoS("xkube:cryptfs: Stat", "path", path)
-
-	if _fs.Hooked(path) {
-		_fs.SFuckingMu.Lock()
-		defer _fs.SFuckingMu.Unlock()
-		f, err := _fs.SFS.Stat(path)
-		if err != nil {
-			return err
-		}
-		*stat = *f
-		return nil
+	if !_fs.Hooked(path) {
+		return hookedSyscallStatTramp(path, stat)
 	}
-	return hookedSyscallStatTramp(path, stat)
+	klog.V(9).InfoS("xkube:cryptfs: Stat", "path", path)
+	_fs.SFuckingMu.Lock()
+	defer _fs.SFuckingMu.Unlock()
+	f, err := _fs.SFS.Stat(path)
+	if err != nil {
+		return err
+	}
+	*stat = *f
+	return nil
 }
 
 //go:noinline
 func hookedSyscallStatTramp(path string, stat *syscall.Stat_t) (err error) {
+	return nil
+}
+
+// os.RemoveAll
+func hookedOSRemoveAll(path string) (err error) {
+	if !filepath.IsAbs(path) {
+		wd, err := syscall.Getwd()
+		if err != nil {
+			return err
+		}
+		if !filepath.IsAbs(wd) {
+			panic(fmt.Sprintf("Getwd: Expected absolute path but get %s", wd))
+		}
+		path = filepath.Join(wd, path)
+	}
+	path = filepath.Clean(path)
+	if !_fs.Hooked(path) {
+		return hookedOSRemoveAllTramp(path)
+	}
+	klog.V(9).InfoS("xkube:cryptfs: RemoveAll", "path", path)
+
+	_fs.SFuckingMu.Lock()
+	defer _fs.SFuckingMu.Unlock()
+	return _fs.SFS.RemoveAll(path)
+}
+
+//go:noinline
+func hookedOSRemoveAllTramp(path string) (err error) {
 	return nil
 }
 
@@ -130,6 +157,10 @@ func hookCommonOps() error {
 	}()
 
 	err = gohook.Hook(syscall.Stat, hookedSyscallStat, hookedSyscallStatTramp)
+	if err != nil {
+		return err
+	}
+	err = gohook.Hook(os.RemoveAll, hookedOSRemoveAll, hookedOSRemoveAllTramp)
 	if err != nil {
 		return err
 	}
@@ -150,5 +181,6 @@ func unhookCommonOps() {
 	gohook.UnHook(syscall.Open)
 	gohook.UnHook(syscall.Close)
 	gohook.UnHook(syscall.Stat)
+	gohook.UnHook(os.RemoveAll)
 	klog.V(1).Infoln("cryptfs common ops unhooked")
 }
