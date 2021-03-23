@@ -3,7 +3,11 @@
 package hook
 
 import (
+	"io"
 	"os"
+
+	"github.com/brahma-adshonor/gohook"
+	"k8s.io/klog/v2"
 )
 
 // File.Readdir
