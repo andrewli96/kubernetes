@@ -28,6 +28,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/options"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/features"
 	"k8s.io/kubernetes/cmd/kubeadm/app/images"
@@ -132,22 +133,23 @@ func CreateStaticPodFiles(manifestDir, patchesDir string, cfg *kubeadmapi.Cluste
 // getAPIServerCommand builds the right API server command from the given config object and version
 func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint *kubeadmapi.APIEndpoint) []string {
 	defaultArguments := map[string]string{
-		"advertise-address":                localAPIEndpoint.AdvertiseAddress,
-		"insecure-port":                    "0",
-		"enable-admission-plugins":         "NodeRestriction",
-		"service-cluster-ip-range":         cfg.Networking.ServiceSubnet,
-		"service-account-key-file":         filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPublicKeyName),
-		"service-account-signing-key-file": filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
-		"service-account-issuer":           fmt.Sprintf("https://kubernetes.default.svc.%s", cfg.Networking.DNSDomain),
-		"client-ca-file":                   filepath.Join(cfg.CertificatesDir, kubeadmconstants.CACertName),
-		"tls-cert-file":                    filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerCertName),
-		"tls-private-key-file":             filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKeyName),
-		"kubelet-client-certificate":       filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKubeletClientCertName),
-		"kubelet-client-key":               filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKubeletClientKeyName),
-		"enable-bootstrap-token-auth":      "true",
-		"secure-port":                      fmt.Sprintf("%d", localAPIEndpoint.BindPort),
-		"allow-privileged":                 "true",
-		"kubelet-preferred-address-types":  "InternalIP,ExternalIP,Hostname",
+		kubeadmconstants.XConfigFileArgumentKey: options.XConfigFile,
+		"advertise-address":                     localAPIEndpoint.AdvertiseAddress,
+		"insecure-port":                         "0",
+		"enable-admission-plugins":              "NodeRestriction",
+		"service-cluster-ip-range":              cfg.Networking.ServiceSubnet,
+		"service-account-key-file":              filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPublicKeyName),
+		"service-account-signing-key-file":      filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
+		"service-account-issuer":                fmt.Sprintf("https://kubernetes.default.svc.%s", cfg.Networking.DNSDomain),
+		"client-ca-file":                        filepath.Join(cfg.CertificatesDir, kubeadmconstants.CACertName),
+		"tls-cert-file":                         filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerCertName),
+		"tls-private-key-file":                  filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKeyName),
+		"kubelet-client-certificate":            filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKubeletClientCertName),
+		"kubelet-client-key":                    filepath.Join(cfg.CertificatesDir, kubeadmconstants.APIServerKubeletClientKeyName),
+		"enable-bootstrap-token-auth":           "true",
+		"secure-port":                           fmt.Sprintf("%d", localAPIEndpoint.BindPort),
+		"allow-privileged":                      "true",
+		"kubelet-preferred-address-types":       "InternalIP,ExternalIP,Hostname",
 		// add options to configure the front proxy.  Without the generated client cert, this will never be useable
 		// so add it unconditionally with recommended values
 		"requestheader-username-headers":     "X-Remote-User",
@@ -159,7 +161,7 @@ func getAPIServerCommand(cfg *kubeadmapi.ClusterConfiguration, localAPIEndpoint 
 		"proxy-client-key-file":              filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyClientKeyName),
 	}
 
-	command := []string{"kube-apiserver"}
+	command := []string{kubeadmconstants.XKubeApiserverCommand}
 
 	// If the user set endpoints for an external etcd cluster
 	if cfg.Etcd.External != nil {
@@ -279,20 +281,21 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 	caFile := filepath.Join(cfg.CertificatesDir, kubeadmconstants.CACertName)
 
 	defaultArguments := map[string]string{
-		"port":                             "0",
-		"bind-address":                     "127.0.0.1",
-		"leader-elect":                     "true",
-		"kubeconfig":                       kubeconfigFile,
-		"authentication-kubeconfig":        kubeconfigFile,
-		"authorization-kubeconfig":         kubeconfigFile,
-		"client-ca-file":                   caFile,
-		"requestheader-client-ca-file":     filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyCACertName),
-		"root-ca-file":                     caFile,
-		"service-account-private-key-file": filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
-		"cluster-signing-cert-file":        caFile,
-		"cluster-signing-key-file":         filepath.Join(cfg.CertificatesDir, kubeadmconstants.CAKeyName),
-		"use-service-account-credentials":  "true",
-		"controllers":                      "*,bootstrapsigner,tokencleaner",
+		kubeadmconstants.XConfigFileArgumentKey: options.XConfigFile,
+		"port":                                  "0",
+		"bind-address":                          "127.0.0.1",
+		"leader-elect":                          "true",
+		"kubeconfig":                            kubeconfigFile,
+		"authentication-kubeconfig":             kubeconfigFile,
+		"authorization-kubeconfig":              kubeconfigFile,
+		"client-ca-file":                        caFile,
+		"requestheader-client-ca-file":          filepath.Join(cfg.CertificatesDir, kubeadmconstants.FrontProxyCACertName),
+		"root-ca-file":                          caFile,
+		"service-account-private-key-file":      filepath.Join(cfg.CertificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName),
+		"cluster-signing-cert-file":             caFile,
+		"cluster-signing-key-file":              filepath.Join(cfg.CertificatesDir, kubeadmconstants.CAKeyName),
+		"use-service-account-credentials":       "true",
+		"controllers":                           "*,bootstrapsigner,tokencleaner",
 	}
 
 	// If using external CA, pass empty string to controller manager instead of ca.key/ca.crt path,
@@ -324,7 +327,7 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 		defaultArguments["feature-gates"] = fmt.Sprintf("%s=%t", features.IPv6DualStack, enabled)
 	}
 
-	command := []string{"kube-controller-manager"}
+	command := []string{kubeadmconstants.XKubeControllerManagerCommand}
 	command = append(command, kubeadmutil.BuildArgumentListFromMap(defaultArguments, cfg.ControllerManager.ExtraArgs)...)
 
 	return command
@@ -334,12 +337,13 @@ func getControllerManagerCommand(cfg *kubeadmapi.ClusterConfiguration) []string 
 func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 	kubeconfigFile := filepath.Join(kubeadmconstants.KubernetesDir, kubeadmconstants.SchedulerKubeConfigFileName)
 	defaultArguments := map[string]string{
-		"port":                      "0",
-		"bind-address":              "127.0.0.1",
-		"leader-elect":              "true",
-		"kubeconfig":                kubeconfigFile,
-		"authentication-kubeconfig": kubeconfigFile,
-		"authorization-kubeconfig":  kubeconfigFile,
+		kubeadmconstants.XConfigFileArgumentKey: options.XConfigFile,
+		"port":                                  "0",
+		"bind-address":                          "127.0.0.1",
+		"leader-elect":                          "true",
+		"kubeconfig":                            kubeconfigFile,
+		"authentication-kubeconfig":             kubeconfigFile,
+		"authorization-kubeconfig":              kubeconfigFile,
 	}
 
 	// TODO: The following code should be remvoved after dual-stack is GA.
@@ -348,7 +352,7 @@ func getSchedulerCommand(cfg *kubeadmapi.ClusterConfiguration) []string {
 		defaultArguments["feature-gates"] = fmt.Sprintf("%s=%t", features.IPv6DualStack, enabled)
 	}
 
-	command := []string{"kube-scheduler"}
+	command := []string{kubeadmconstants.XkubeSchedulerCommand}
 	command = append(command, kubeadmutil.BuildArgumentListFromMap(defaultArguments, cfg.Scheduler.ExtraArgs)...)
 	return command
 }

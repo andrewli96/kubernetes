@@ -25,6 +25,14 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/features"
 )
 
+// global variable --x-config
+var XConfigFile string
+
+// AddXKubeConfigFlag adds the --x-config flag to the given flagset
+func AddXKubeConfigFlag(fs *pflag.FlagSet, xkubeConfigFile *string) {
+	fs.StringVar(xkubeConfigFile, "x-config", *xkubeConfigFile, "The path to xkube config file.")
+}
+
 // AddKubeConfigFlag adds the --kubeconfig flag to the given flagset
 func AddKubeConfigFlag(fs *pflag.FlagSet, kubeConfigFile *string) {
 	fs.StringVar(kubeConfigFile, KubeconfigPath, *kubeConfigFile, "The kubeconfig file to use when talking to the cluster. If the flag is not set, a set of standard locations can be searched for an existing kubeconfig file.")

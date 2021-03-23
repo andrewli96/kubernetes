@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 
 	"k8s.io/apimachinery/pkg/util/version"
+	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	utilsexec "k8s.io/utils/exec"
 )
 
@@ -30,10 +31,10 @@ import (
 func GetKubeletVersion(execer utilsexec.Interface) (*version.Version, error) {
 	kubeletVersionRegex := regexp.MustCompile(`^\s*Kubernetes v((0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)([-0-9a-zA-Z_\.+]*)?)\s*$`)
 
-	command := execer.Command("kubelet", "--version")
+	command := execer.Command(kubeadmconstants.XKubeletCommand, "--version")
 	out, err := command.Output()
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot execute 'kubelet --version'")
+		return nil, errors.Wrapf(err, "cannot execute '%s --version'", kubeadmconstants.XKubeletCommand)
 	}
 
 	cleanOutput := strings.TrimSpace(string(out))

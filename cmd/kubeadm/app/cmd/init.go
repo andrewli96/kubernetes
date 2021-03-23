@@ -23,12 +23,14 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"git.basebit.me/enigma/xkube-common/cryptfs"
 	"github.com/lithammer/dedent"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/sets"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmscheme "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/scheme"
 	kubeadmapiv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
@@ -44,6 +46,7 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/apiclient"
 	configutil "k8s.io/kubernetes/cmd/kubeadm/app/util/config"
 	kubeconfigutil "k8s.io/kubernetes/cmd/kubeadm/app/util/kubeconfig"
+	"k8s.io/kubernetes/pkg/xkube"
 )
 
 var (
@@ -133,6 +136,7 @@ type initData struct {
 func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 	if initOptions == nil {
 		initOptions = newInitOptions()
+		xKubeadmOptions.InitOptions = initOptions
 	}
 	initRunner := workflow.NewRunner()
 
@@ -144,8 +148,54 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
+			// config and init options
 			data := c.(*initData)
+			xKubeadmOptions.InitData = data
+			options.XConfigFile = xKubeadmOptions.X.XConfigFile
+			sqlfsMkdirMode = 0700
+
+			// Validate Directories
+			if xKubeadmOptions.InitData.certificatesDir != kubeadmconstants.XCertificatesDefaultDir {
+				panic(fmt.Sprintf("Certificates dir %s is not valid.", xKubeadmOptions.InitData.certificatesDir))
+			}
+			if xKubeadmOptions.InitData.kubeconfigDir != kubeadmconstants.XKubeconfigDefaultDir {
+				panic(fmt.Sprintf("Kubeconfig dir %s is not valid.", xKubeadmOptions.InitData.kubeconfigDir))
+			}
+			if xKubeadmOptions.InitData.ManifestDir() != kubeadmconstants.XManifestDefaultDir {
+				panic(fmt.Sprintf("Manifest dir %s is not valid.", xKubeadmOptions.InitData.ManifestDir()))
+			}
+			if xKubeadmOptions.InitData.KubeletDir() != kubeadmconstants.XKubeletDefaultDir {
+				panic(fmt.Sprintf("Kubelet dir %s is not valid.", xKubeadmOptions.InitData.KubeletDir()))
+			}
+
+			// Create needed directorires
+			fs, err := cryptfs.New(xKubeadmOptions.X.XConfigFile, xkube.GetConfigFileKey(), nil)
+			if err != nil {
+				return err
+			}
+			defer fs.Close()
+			xMustMakeDirAll(fs, kubeadmconstants.XCertificatesDefaultDir, sqlfsMkdirMode)
+			xMustMakeDirAll(fs, kubeadmconstants.XKubeconfigDefaultDir, sqlfsMkdirMode)
+			xMustMakeDirAll(fs, kubeadmconstants.XEtcdCertificatesDefaultDir, sqlfsMkdirMode)
+			xMustMakeDirAll(fs, kubeadmconstants.XKubeletDefaultDir, sqlfsMkdirMode)
+			xMustMakeDirAll(fs, kubeadmconstants.XManifestDefaultDir, sqlfsMkdirMode)
+			// hook all the file operations from local fs into the cryptfs
+			patterns, hookErr := getCryptfsHookedFiles(xKubeadmOptions)
+			if hookErr != nil {
+				os.Exit(1)
+			}
+			if len(patterns) > 0 {
+				if err := xkube.Setup(xOptions, patterns); err != nil {
+					klog.Fatalf("Failed to setup xkube. %s\n", err)
+					os.Exit(1)
+				}
+				defer func() {
+					xkube.Close()
+				}()
+			} else {
+				klog.Warningf("None of file hooked, xkube not enabled")
+			}
+
 			fmt.Printf("[init] Using Kubernetes version: %s\n", data.cfg.KubernetesVersion)
 
 			if err := initRunner.Run(args); err != nil {
@@ -178,6 +228,7 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 	initRunner.AppendPhase(phases.NewPreflightPhase())
 	initRunner.AppendPhase(phases.NewCertsPhase())
 	initRunner.AppendPhase(phases.NewKubeConfigPhase())
+	//TODO initRunner.AppendPhase(phases.ContainerdPhase())
 	initRunner.AppendPhase(phases.NewKubeletStartPhase())
 	initRunner.AppendPhase(phases.NewControlPlanePhase())
 	initRunner.AppendPhase(phases.NewEtcdPhase())

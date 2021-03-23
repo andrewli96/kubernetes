@@ -12,7 +12,7 @@ import (
 	"k8s.io/kubernetes/pkg/xkube/options"
 )
 
-func getConfigFileKey() []byte {
+func GetConfigFileKey() []byte {
 	// TODO(angus): Replace the static plain password with dynamic obscure byte
 	// return []byte("PAsWORD_HERE_123")
 	return []byte("foo")
@@ -25,7 +25,7 @@ func Setup(options *options.XOptions, patterns []cryptfs.MatchPattern) error {
 	if options.XConfigFile == "" {
 		return fmt.Errorf("X config file not set")
 	}
-	err := hook.Load(options.XConfigFile, getConfigFileKey(), patterns)
+	err := hook.Load(options.XConfigFile, GetConfigFileKey(), patterns)
 	if err != nil {
 		return err
 	}

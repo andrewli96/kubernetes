@@ -19,7 +19,14 @@ package kubelet
 import (
 	"fmt"
 
+	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	"k8s.io/kubernetes/cmd/kubeadm/app/util/initsystem"
+)
+
+var (
+	//kubeletCommand = "kubelet"
+	//XKubelet
+	kubeletCommand = kubeadmconstants.XKubeletCommand
 )
 
 // TryStartKubelet attempts to bring up kubelet service
@@ -31,12 +38,12 @@ func TryStartKubelet() {
 		return
 	}
 
-	if !initSystem.ServiceExists("kubelet") {
+	if !initSystem.ServiceExists(kubeletCommand) {
 		fmt.Println("[kubelet-start] couldn't detect a kubelet service, can't make sure the kubelet is running properly.")
 	}
 
 	// This runs "systemctl daemon-reload && systemctl restart kubelet"
-	if err := initSystem.ServiceRestart("kubelet"); err != nil {
+	if err := initSystem.ServiceRestart(kubeletCommand); err != nil {
 		fmt.Printf("[kubelet-start] WARNING: unable to start the kubelet service: [%v]\n", err)
 		fmt.Printf("[kubelet-start] Please ensure kubelet is reloaded and running manually.\n")
 	}
@@ -51,12 +58,12 @@ func TryStopKubelet() {
 		return
 	}
 
-	if !initSystem.ServiceExists("kubelet") {
+	if !initSystem.ServiceExists(kubeletCommand) {
 		fmt.Println("[kubelet-start] couldn't detect a kubelet service, can't make sure the kubelet not running for a short period of time while setting up configuration for it.")
 	}
 
 	// This runs "systemctl daemon-reload && systemctl stop kubelet"
-	if err := initSystem.ServiceStop("kubelet"); err != nil {
+	if err := initSystem.ServiceStop(kubeletCommand); err != nil {
 		fmt.Printf("[kubelet-start] WARNING: unable to stop the kubelet service momentarily: [%v]\n", err)
 	}
 }
@@ -70,12 +77,12 @@ func TryRestartKubelet() {
 		return
 	}
 
-	if !initSystem.ServiceExists("kubelet") {
+	if !initSystem.ServiceExists(kubeletCommand) {
 		fmt.Println("[kubelet-start] couldn't detect a kubelet service, can't make sure the kubelet not running for a short period of time while setting up configuration for it.")
 	}
 
 	// This runs "systemctl daemon-reload && systemctl stop kubelet"
-	if err := initSystem.ServiceRestart("kubelet"); err != nil {
+	if err := initSystem.ServiceRestart(kubeletCommand); err != nil {
 		fmt.Printf("[kubelet-start] WARNING: unable to restart the kubelet service momentarily: [%v]\n", err)
 	}
 }
