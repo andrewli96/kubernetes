@@ -20,7 +20,6 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -83,7 +82,7 @@ func CreateServiceAccountKeyAndPublicKeyFiles(certsDir string, keyType x509.Publ
 		// are equal and doesn't bother writing a new file
 		fmt.Printf("[certs] Using the existing %q key\n", kubeadmconstants.ServiceAccountKeyBaseName)
 		return nil
-	} else if !os.IsNotExist(err) && reflect.TypeOf(err) != reflect.TypeOf(&fs.PathError{}) {
+	} else if !os.IsNotExist(err) && reflect.TypeOf(err) != reflect.TypeOf(&os.PathError{}) {
 		return errors.Wrapf(err, "file %s existed but it could not be loaded properly", kubeadmconstants.ServiceAccountPrivateKeyName)
 	}
 
