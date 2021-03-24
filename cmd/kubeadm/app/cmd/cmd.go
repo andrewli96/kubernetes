@@ -29,7 +29,6 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/options"
 	"k8s.io/kubernetes/cmd/kubeadm/app/cmd/upgrade"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
-	certsphase "k8s.io/kubernetes/cmd/kubeadm/app/phases/certs"
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 	"k8s.io/kubernetes/pkg/xkube"
 	xkubeoptions "k8s.io/kubernetes/pkg/xkube/options"
@@ -49,11 +48,14 @@ type XKubeadmOptions struct {
 	X           *xkubeoptions.XOptions
 	InitOptions *initOptions
 	InitData    *initData
+	JoinOptions *joinOptions
+	JoinData    *joinData
 }
 
 // NewKubeadmCommand returns cobra.Command to run kubeadm command
 func NewKubeadmCommand(in io.Reader, out, err io.Writer) *cobra.Command {
 	var rootfsPath string
+	sqlfsMkdirMode = 0700
 	xOptions = xkubeoptions.NewXOptions()
 	xKubeadmOptions = &XKubeadmOptions{
 		X: xOptions,
@@ -133,54 +135,66 @@ func NewKubeadmCommand(in io.Reader, out, err io.Writer) *cobra.Command {
 func getCryptfsHookedFiles(xKubeadmOptions *XKubeadmOptions) ([]cryptfs.MatchPattern, error) {
 	var patterns []cryptfs.MatchPattern
 
-	klog.Infof("InitOptions=%+v", xKubeadmOptions.InitOptions)
+	hookParentDirs = append(hookParentDirs, kubeadmconstants.XKubeconfigDefaultDir)
+	hookParentDirs = append(hookParentDirs, kubeadmconstants.XCertificatesDefaultDir)
+	hookParentDirs = append(hookParentDirs, kubeadmconstants.XEtcdCertificatesDefaultDir)
+	hookParentDirs = append(hookParentDirs, kubeadmconstants.XManifestDefaultDir)
+	hookParentDirs = append(hookParentDirs, kubeadmconstants.XContainerdDefaultDir)
+	hookParentDirs = append(hookParentDirs, kubeadmconstants.XKubeletDefaultDir)
 
 	// Command Init Hook Procedure
-	if xKubeadmOptions.InitData != nil {
-		// Hook certs
-		for _, cert := range certsphase.GetDefaultCertList() {
-			crtFileName := filepath.Join(xKubeadmOptions.InitData.certificatesDir, cert.BaseName+".crt")
-			keyFileName := filepath.Join(xKubeadmOptions.InitData.certificatesDir, cert.BaseName+".key")
-			hookPaths = append(hookPaths, crtFileName)
-			hookPaths = append(hookPaths, keyFileName)
-		}
+	/*
+		if xKubeadmOptions.InitData != nil {
+			// Hook certs
+			for _, cert := range certsphase.GetDefaultCertList() {
+				crtFileName := filepath.Join(xKubeadmOptions.InitData.certificatesDir, cert.BaseName+".crt")
+				keyFileName := filepath.Join(xKubeadmOptions.InitData.certificatesDir, cert.BaseName+".key")
+				hookPaths = append(hookPaths, crtFileName)
+				hookPaths = append(hookPaths, keyFileName)
+			}
 
-		// Hook Service Account
-		saKeyFileName := filepath.Join(xKubeadmOptions.InitData.certificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName)
-		saPubFileName := filepath.Join(xKubeadmOptions.InitData.certificatesDir, kubeadmconstants.ServiceAccountPublicKeyName)
-		hookPaths = append(hookPaths, saKeyFileName)
-		hookPaths = append(hookPaths, saPubFileName)
+			// Hook Service Account
+			saKeyFileName := filepath.Join(xKubeadmOptions.InitData.certificatesDir, kubeadmconstants.ServiceAccountPrivateKeyName)
+			saPubFileName := filepath.Join(xKubeadmOptions.InitData.certificatesDir, kubeadmconstants.ServiceAccountPublicKeyName)
+			hookPaths = append(hookPaths, saKeyFileName)
+			hookPaths = append(hookPaths, saPubFileName)
 
-		// Hook Kubeconfig
-		hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.kubeconfigDir, kubeadmconstants.AdminKubeConfigFileName))
-		hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.kubeconfigDir, kubeadmconstants.KubeletBootstrapKubeConfigFileName))
-		hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.kubeconfigDir, kubeadmconstants.KubeletKubeConfigFileName))
-		hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.kubeconfigDir, kubeadmconstants.ControllerManagerKubeConfigFileName))
-		hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.kubeconfigDir, kubeadmconstants.SchedulerKubeConfigFileName))
+			// Hook Kubeconfig
+			hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.kubeconfigDir, kubeadmconstants.AdminKubeConfigFileName))
+			hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.kubeconfigDir, kubeadmconstants.KubeletBootstrapKubeConfigFileName))
+			hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.kubeconfigDir, kubeadmconstants.KubeletKubeConfigFileName))
+			hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.kubeconfigDir, kubeadmconstants.ControllerManagerKubeConfigFileName))
+			hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.kubeconfigDir, kubeadmconstants.SchedulerKubeConfigFileName))
 
-		// Hook Manifests Pod Spec
-		hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.ManifestDir(), kubeadmconstants.KubeAPIServer+".yaml"))
-		hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.ManifestDir(), kubeadmconstants.KubeControllerManager+".yaml"))
-		hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.ManifestDir(), kubeadmconstants.KubeScheduler+".yaml"))
-		hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.ManifestDir(), kubeadmconstants.Etcd+".yaml"))
+			// Hook Manifests Pod Spec
+			hookParentDirs = append(hookParentDirs, xKubeadmOptions.InitData.ManifestDir())
+			hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.ManifestDir(), kubeadmconstants.KubeAPIServer+".yaml"))
+			hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.ManifestDir(), kubeadmconstants.KubeControllerManager+".yaml"))
+			hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.ManifestDir(), kubeadmconstants.KubeScheduler+".yaml"))
+			hookPaths = append(hookPaths, filepath.Join(xKubeadmOptions.InitData.ManifestDir(), kubeadmconstants.Etcd+".yaml"))
 
-		// Hook Kubelet
-		hookParentDirs = append(hookParentDirs, xKubeadmOptions.InitData.KubeletDir())
-	}
+			// Hook Containerd
+			hookParentDirs = append(hookParentDirs, kubeadmconstants.XContainerdDefaultDir)
 
-	for _, path := range hookPaths {
-		if path != "" {
+			// Hook Kubelet
+			hookParentDirs = append(hookParentDirs, xKubeadmOptions.InitData.KubeletDir())
+		}*/
+
+	// hook dirs
+	for _, dir := range hookParentDirs {
+		if dir != "" {
 			patterns = append(patterns, cryptfs.MatchPattern{
-				Mode:  cryptfs.MATCH_EXACT,
-				Value: path,
+				Mode:  cryptfs.MATCH_PARENT,
+				Value: dir,
 			})
 		}
 	}
 
-	for _, path := range hookParentDirs {
+	// hook paths
+	for _, path := range hookPaths {
 		if path != "" {
 			patterns = append(patterns, cryptfs.MatchPattern{
-				Mode:  cryptfs.MATCH_PARENT,
+				Mode:  cryptfs.MATCH_EXACT,
 				Value: path,
 			})
 		}

@@ -220,6 +220,10 @@ func GetDefaultCertList() Certificates {
 		KubeadmCertRootCA(),
 		KubeadmCertAPIServer(),
 		KubeadmCertKubeletClient(),
+		// xcontainerd certs
+		KubeadmCertXContainerd(),
+		// kubelet to cri certs
+		KubeadmCertKubeletCRIClient(),
 		// Front Proxy certs
 		KubeadmCertFrontProxyCA(),
 		KubeadmCertFrontProxyClient(),
@@ -238,6 +242,10 @@ func GetCertsWithoutEtcd() Certificates {
 		KubeadmCertRootCA(),
 		KubeadmCertAPIServer(),
 		KubeadmCertKubeletClient(),
+		// xcontainerd certs
+		KubeadmCertXContainerd(),
+		// kubelet to cri certs
+		KubeadmCertKubeletCRIClient(),
 		// Front Proxy certs
 		KubeadmCertFrontProxyCA(),
 		KubeadmCertFrontProxyClient(),
@@ -287,6 +295,42 @@ func KubeadmCertKubeletClient() *KubeadmCert {
 		config: pkiutil.CertConfig{
 			Config: certutil.Config{
 				CommonName:   kubeadmconstants.APIServerKubeletClientCertCommonName,
+				Organization: []string{kubeadmconstants.SystemPrivilegedGroup},
+				Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+			},
+		},
+	}
+}
+
+// KubeadmCertXContainerd is the definition of the cert used to serve xcontainerd.
+func KubeadmCertXContainerd() *KubeadmCert {
+	return &KubeadmCert{
+		Name:     "containerd",
+		LongName: "certificate for serving the xcontainerd",
+		BaseName: kubeadmconstants.XContainerdCertAndKeyBaseName,
+		CAName:   "ca",
+		config: pkiutil.CertConfig{
+			Config: certutil.Config{
+				CommonName: kubeadmconstants.XContainerdCertCommonName,
+				Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			},
+		},
+		configMutators: []configMutatorsFunc{
+			makeAltNamesMutator(pkiutil.GetXContainerdAltNames),
+		},
+	}
+}
+
+// KubeadmCertKubeletCRIClient is the definition of the cert used by the kubelet to access the cri.
+func KubeadmCertKubeletCRIClient() *KubeadmCert {
+	return &KubeadmCert{
+		Name:     "kubelet-cri-client",
+		LongName: "certificate for the kubelet to connect to cri",
+		BaseName: kubeadmconstants.XKubeletCRIClientCertAndKeyBaseName,
+		CAName:   "ca",
+		config: pkiutil.CertConfig{
+			Config: certutil.Config{
+				CommonName:   kubeadmconstants.XKubeletCRIClientCertCommonName,
 				Organization: []string{kubeadmconstants.SystemPrivilegedGroup},
 				Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 			},

@@ -418,6 +418,23 @@ func GetEtcdPeerAltNames(cfg *kubeadmapi.InitConfiguration) (*certutil.AltNames,
 	return getAltNames(cfg, kubeadmconstants.EtcdPeerCertName)
 }
 
+// GetXContainerdAltNames builds an AltNames object for generating the xcontainerd certificate.
+func GetXContainerdAltNames(cfg *kubeadmapi.InitConfiguration) (*certutil.AltNames, error) {
+	// advertise address
+	advertiseAddress := net.ParseIP(cfg.LocalAPIEndpoint.AdvertiseAddress)
+	if advertiseAddress == nil {
+		return nil, errors.Errorf("error parsing LocalAPIEndpoint AdvertiseAddress %v: is not a valid textual representation of an IP address",
+			cfg.LocalAPIEndpoint.AdvertiseAddress)
+	}
+
+	// create AltNames with defaults DNSNames/IPs
+	altNames := &certutil.AltNames{
+		DNSNames: []string{cfg.NodeRegistration.Name, "localhost", kubeadmconstants.XContainerdCertCommonName},
+		IPs:      []net.IP{advertiseAddress, net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+	}
+	return altNames, nil
+}
+
 // getAltNames builds an AltNames object with the cfg and certName.
 func getAltNames(cfg *kubeadmapi.InitConfiguration, certName string) (*certutil.AltNames, error) {
 	// advertise address

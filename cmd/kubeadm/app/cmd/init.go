@@ -152,7 +152,6 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 			data := c.(*initData)
 			xKubeadmOptions.InitData = data
 			options.XConfigFile = xKubeadmOptions.X.XConfigFile
-			sqlfsMkdirMode = 0700
 
 			// Validate Directories
 			if xKubeadmOptions.InitData.certificatesDir != kubeadmconstants.XCertificatesDefaultDir {
@@ -174,8 +173,9 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 				return err
 			}
 			defer fs.Close()
-			xMustMakeDirAll(fs, kubeadmconstants.XCertificatesDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XKubeconfigDefaultDir, sqlfsMkdirMode)
+			xMustMakeDirAll(fs, kubeadmconstants.XContainerdDefaultDir, sqlfsMkdirMode)
+			xMustMakeDirAll(fs, kubeadmconstants.XCertificatesDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XEtcdCertificatesDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XKubeletDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XManifestDefaultDir, sqlfsMkdirMode)
@@ -228,7 +228,8 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 	initRunner.AppendPhase(phases.NewPreflightPhase())
 	initRunner.AppendPhase(phases.NewCertsPhase())
 	initRunner.AppendPhase(phases.NewKubeConfigPhase())
-	//TODO initRunner.AppendPhase(phases.ContainerdPhase())
+	// X: generate xcontainerd config and certs to sqlfs and start xcontainerd
+	initRunner.AppendPhase(phases.NewXContainerdPhase())
 	initRunner.AppendPhase(phases.NewKubeletStartPhase())
 	initRunner.AppendPhase(phases.NewControlPlanePhase())
 	initRunner.AppendPhase(phases.NewEtcdPhase())
