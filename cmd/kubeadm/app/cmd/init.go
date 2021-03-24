@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	"git.basebit.me/enigma/xkube-common/cryptfs"
 	"github.com/lithammer/dedent"
@@ -172,13 +173,17 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer fs.Close()
 			xMustMakeDirAll(fs, kubeadmconstants.XKubeconfigDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XContainerdDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XCertificatesDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XEtcdCertificatesDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XKubeletDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XManifestDefaultDir, sqlfsMkdirMode)
+			fs.Close()
+
+			// TODO(need to be fixed): dirty way to bypass sqlfs reopen on linux
+			klog.Infoln("Wait till Cryptfs ready for reopen.")
+			time.Sleep(5 * time.Second)
 			// hook all the file operations from local fs into the cryptfs
 			patterns, hookErr := getCryptfsHookedFiles(xKubeadmOptions)
 			if hookErr != nil {
