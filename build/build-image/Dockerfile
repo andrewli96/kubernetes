@@ -16,7 +16,7 @@
 ARG KUBE_BUILD_IMAGE_CROSS_TAG
 
 # FROM k8s.gcr.io/build-image/kube-cross:${KUBE_BUILD_IMAGE_CROSS_TAG}
-FROM docker-reg.basebit.me:5000/k8s/base/xkube-cross:v1.15.8-1
+FROM docker-reg.basebit.me:5000/base/xkube-cross:v1.15.8-1-c68064a
 
 # Mark this as a kube-build container
 RUN touch /kube-build-image
