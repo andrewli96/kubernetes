@@ -85,7 +85,7 @@ define ALL_HELP_INFO
 #   make all GOLDFLAGS=""
 #     Note: Specify GOLDFLAGS as an empty string for building unstripped binaries, which allows
 #           you to use code debugging tools like delve. When GOLDFLAGS is unspecified, it defaults
-#           to "-s -w" which strips debug information. Other flags that can be used for GOLDFLAGS 
+#           to "-s -w" which strips debug information. Other flags that can be used for GOLDFLAGS
 #           are documented at https://golang.org/cmd/link/
 endef
 .PHONY: all
@@ -288,8 +288,8 @@ define TEST_E2E_KUBEADM_HELP_INFO
 #  BUILD: Build kubeadm end-to-end tests. Defaults to true.
 #
 # Example:
-#   make test-e2e-kubeadm 
-#   make test-e2e-kubeadm FOCUS=kubeadm-config 
+#   make test-e2e-kubeadm
+#   make test-e2e-kubeadm FOCUS=kubeadm-config
 #   make test-e2e-kubeadm SKIP=kubeadm-config
 #
 # Build and run tests.
@@ -299,7 +299,7 @@ ifeq ($(PRINT_HELP),y)
 test-e2e-kubeadm:
 	@echo "$$TEST_E2E_KUBEADM_HELP_INFO"
 else
-test-e2e-kubeadm: 
+test-e2e-kubeadm:
 	hack/make-rules/test-e2e-kubeadm.sh
 endif
 
@@ -453,6 +453,27 @@ release-skip-tests quick-release: KUBE_RELEASE_RUN_TESTS = n
 release-skip-tests quick-release: KUBE_FASTBUILD = true
 release-skip-tests quick-release:
 	build/release.sh
+endif
+
+
+define XKUBE_RELEASE_HELP_INFO
+# Build release images, but only for linux/amd64
+#
+# Args:
+#   make xkube-release WHAT=cmd/kubelet
+#   KUBE_FASTBUILD: Whether to cross-compile for other architectures. Set to 'false' to do so.
+#
+# Example:
+#   make xkube-release
+endef
+.PHONY: xkube-release
+ifeq ($(PRINT_HELP),y)
+xkube-release:
+	@echo "$$XKUBE_RELEASE_HELP_INFO"
+else
+xkube-release: KUBE_FASTBUILD = true
+xkube-release:
+	build/xkube-release.sh $(WHAT)
 endif
 
 define QUICK_RELEASE_IMAGES_HELP_INFO

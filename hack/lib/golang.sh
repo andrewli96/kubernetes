@@ -65,6 +65,18 @@ readonly KUBE_SUPPORTED_TEST_PLATFORMS=(
   windows/amd64
 )
 
+kube::golang::xkube_cmd_targets() {
+  local targets=(
+    cmd/kubectl
+    cmd/kubelet
+    cmd/kubeadm
+  )
+  echo "${targets[@]}"
+}
+
+IFS=" " read -ra XKUBE_CMD_TARGETS <<< "$(kube::golang::xkube_cmd_targets)"
+readonly XKUBE_CMD_TARGETS
+
 # The set of server targets that we are only building for Linux
 # If you update this list, please also update build/BUILD.
 kube::golang::server_targets() {
