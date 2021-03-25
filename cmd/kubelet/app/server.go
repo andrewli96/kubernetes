@@ -327,7 +327,6 @@ func getCryptfsHookedFiles(opts *options.KubeletFlags) ([]cryptfs.MatchPattern, 
 		remote.DefaulCriRemoteTLSKey,
 		remote.DefaulCriRemoteTLSRootCA,
 
-		// opts.StaticPodPath,
 		// opts.TLSCertFile,
 		// opts.TLSPrivateKeyFile,
 		// opts.Authentication.X509.ClientCAFile,
@@ -339,6 +338,11 @@ func getCryptfsHookedFiles(opts *options.KubeletFlags) ([]cryptfs.MatchPattern, 
 			})
 		}
 	}
+
+	patterns = append(patterns, cryptfs.MatchPattern{
+		Mode:  cryptfs.MATCH_PARENT,
+		Value: "/etc/kubernetes/manifests",
+	})
 
 	return patterns, nil
 }
