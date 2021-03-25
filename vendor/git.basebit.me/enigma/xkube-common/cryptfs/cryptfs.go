@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 
 	"github.com/pkg/errors"
 
 	"git.basebit.me/enigma/sqlfs-go"
+	"git.basebit.me/enigma/xkube-common/cryptfs/utils"
 )
 
 type MatchMode int
@@ -83,7 +83,7 @@ type CryptFs struct {
 }
 
 func (fs *CryptFs) Hooked(path string) (matched bool) {
-	path = normpath(path)
+	path = utils.Normpath(path)
 	found := false
 	for _, x := range fs.HookedPatterns {
 		switch x.Mode {
@@ -163,17 +163,6 @@ func (fs *CryptFs) ReadFile(filename string) ([]byte, error) {
 			return data, err
 		}
 	}
-}
-
-func normpath(path string) string {
-	if !filepath.IsAbs(path) {
-		wd, err := syscall.Getwd()
-		if err != nil {
-			panic(err)
-		}
-		path = filepath.Join(wd, path)
-	}
-	return filepath.Clean(path)
 }
 
 func isParentDir(parent, path string) bool {

@@ -1,25 +1,17 @@
 package hook
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 	"syscall"
 
+	"git.basebit.me/enigma/xkube-common/cryptfs/utils"
 	"github.com/brahma-adshonor/gohook"
 	"k8s.io/klog/v2"
 )
 
 // Syscall.Open
 func hookedSyscallOpen(name string, mode int, perm uint32) (fd int, err error) {
-	if !filepath.IsAbs(name) {
-		wd, err := os.Getwd()
-		if err != nil {
-			return -1, err
-		}
-		name = filepath.Join(wd, name)
-	}
-	name = filepath.Clean(name)
+	name = utils.Normpath(name)
 	if !_fs.Hooked(name) {
 		return hookedSyscallOpenTramp(name, mode, perm)
 	}
@@ -89,17 +81,7 @@ func hookedSyscallCloseTramp(fd int) error {
 
 // Syscall.Stat
 func hookedSyscallStat(path string, stat *syscall.Stat_t) (err error) {
-	if !filepath.IsAbs(path) {
-		wd, err := syscall.Getwd()
-		if err != nil {
-			return err
-		}
-		if !filepath.IsAbs(wd) {
-			panic(fmt.Sprintf("Getwd: Expected absolute path but get %s", wd))
-		}
-		path = filepath.Join(wd, path)
-	}
-	path = filepath.Clean(path)
+	path = utils.Normpath(path)
 	if !_fs.Hooked(path) {
 		return hookedSyscallStatTramp(path, stat)
 	}
@@ -121,17 +103,7 @@ func hookedSyscallStatTramp(path string, stat *syscall.Stat_t) (err error) {
 
 // os.RemoveAll
 func hookedOSRemoveAll(path string) (err error) {
-	if !filepath.IsAbs(path) {
-		wd, err := syscall.Getwd()
-		if err != nil {
-			return err
-		}
-		if !filepath.IsAbs(wd) {
-			panic(fmt.Sprintf("Getwd: Expected absolute path but get %s", wd))
-		}
-		path = filepath.Join(wd, path)
-	}
-	path = filepath.Clean(path)
+	path = utils.Normpath(path)
 	if !_fs.Hooked(path) {
 		return hookedOSRemoveAllTramp(path)
 	}

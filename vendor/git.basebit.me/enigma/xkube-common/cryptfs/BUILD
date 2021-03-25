@@ -12,6 +12,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//vendor/git.basebit.me/enigma/sqlfs-go:go_default_library",
+        "//vendor/git.basebit.me/enigma/xkube-common/cryptfs/utils:go_default_library",
         "//vendor/github.com/pkg/errors:go_default_library",
     ],
 )
@@ -28,6 +29,7 @@ filegroup(
     srcs = [
         ":package-srcs",
         "//vendor/git.basebit.me/enigma/xkube-common/cryptfs/hook:all-srcs",
+        "//vendor/git.basebit.me/enigma/xkube-common/cryptfs/utils:all-srcs",
     ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],

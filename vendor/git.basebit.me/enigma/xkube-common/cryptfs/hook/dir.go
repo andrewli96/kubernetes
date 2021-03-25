@@ -4,6 +4,7 @@ import (
 	"os"
 	"syscall"
 
+	"git.basebit.me/enigma/xkube-common/cryptfs/utils"
 	"github.com/brahma-adshonor/gohook"
 	"k8s.io/klog/v2"
 )
@@ -30,6 +31,7 @@ import (
 
 // Syscall.Mkdir
 func hookedSyscallMkdir(path string, mode uint32) (err error) {
+	path = utils.Normpath(path)
 	klog.V(9).InfoS("xkube:cryptfs: Mkdir", "path", path, "mode", mode)
 	if _fs.Hooked(path) {
 		_fs.SFuckingMu.Lock()
@@ -46,6 +48,7 @@ func hookedSyscallMkdirTramp(path string, mode uint32) (err error) {
 
 // Syscall.Rmdir
 func hookedSyscallRmdir(path string) (err error) {
+	path = utils.Normpath(path)
 	klog.V(9).InfoS("xkube:cryptfs: Rmdir", "path", path)
 	if _fs.Hooked(path) {
 		_fs.SFuckingMu.Lock()

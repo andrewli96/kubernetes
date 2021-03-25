@@ -18,6 +18,7 @@ go_library(
     deps = [
         "//vendor/git.basebit.me/enigma/sqlfs-go:go_default_library",
         "//vendor/git.basebit.me/enigma/xkube-common/cryptfs:go_default_library",
+        "//vendor/git.basebit.me/enigma/xkube-common/cryptfs/utils:go_default_library",
         "//vendor/github.com/brahma-adshonor/gohook:go_default_library",
         "//vendor/github.com/cornelk/hashmap:go_default_library",
         "//vendor/k8s.io/klog/v2:go_default_library",
