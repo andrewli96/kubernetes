@@ -44,6 +44,13 @@ func GetKubernetesImage(image string, cfg *kubeadmapi.ClusterConfiguration) stri
 	return GetGenericImage(repoPrefix, image, kubernetesImageTag)
 }
 
+// GetxKubernetesImage generates and returns the image for the components managed in the xkube main repository,
+func GetXKubernetesImage(image string, cfg *kubeadmapi.ClusterConfiguration) string {
+	repoPrefix := constants.XRegistry
+	kubernetesImageTag := kubeadmutil.KubernetesVersionToImageTag(cfg.KubernetesVersion)
+	return GetGenericImage(repoPrefix, image, kubernetesImageTag)
+}
+
 // GetDNSImage generates and returns the image for the DNS, that can be CoreDNS or kube-dns.
 // Given that kube-dns uses 3 containers, an additional imageName parameter was added
 func GetDNSImage(cfg *kubeadmapi.ClusterConfiguration, imageName string) string {
@@ -87,6 +94,25 @@ func GetEtcdImage(cfg *kubeadmapi.ClusterConfiguration) string {
 	return GetGenericImage(etcdImageRepository, constants.Etcd, etcdImageTag)
 }
 
+// GetEtcdImage generates and returns the image for etcd
+func GetXEtcdImage(cfg *kubeadmapi.ClusterConfiguration) string {
+	// Etcd uses default image repository by default
+	etcdImageRepository := constants.XRegistry
+	// unless an override is specified
+	// X: disable overwrite
+	//if cfg.Etcd.Local != nil && cfg.Etcd.Local.ImageRepository != "" {
+	//	etcdImageRepository = cfg.Etcd.Local.ImageRepository
+	//}
+	// Etcd uses an imageTag that corresponds to the etcd version matching the Kubernetes version
+	etcdImageTag := constants.XEtcdImageTag
+	// unless an override is specified
+	// X: disable overwrite
+	//if cfg.Etcd.Local != nil && cfg.Etcd.Local.ImageTag != "" {
+	//		etcdImageTag = cfg.Etcd.Local.ImageTag
+	//}
+	return GetGenericImage(etcdImageRepository, constants.XEtcdImageName, etcdImageTag)
+}
+
 // GetControlPlaneImages returns a list of container images kubeadm expects to use on a control plane node
 func GetControlPlaneImages(cfg *kubeadmapi.ClusterConfiguration) []string {
 	imgs := []string{}
@@ -96,9 +122,10 @@ func GetControlPlaneImages(cfg *kubeadmapi.ClusterConfiguration) []string {
 		klog.Warningln(`WARNING: DEPRECATED use of the "hyperkube" image for the Kubernetes control plane.` + extraHyperKubeNote)
 		imgs = append(imgs, GetKubernetesImage(constants.HyperKube, cfg))
 	} else {
-		imgs = append(imgs, GetKubernetesImage(constants.KubeAPIServer, cfg))
-		imgs = append(imgs, GetKubernetesImage(constants.KubeControllerManager, cfg))
-		imgs = append(imgs, GetKubernetesImage(constants.KubeScheduler, cfg))
+		// X: get xkube images
+		imgs = append(imgs, GetXKubernetesImage(constants.XKubeApiserverImageName, cfg))
+		imgs = append(imgs, GetXKubernetesImage(constants.XKubeControllerManagerImageName, cfg))
+		imgs = append(imgs, GetXKubernetesImage(constants.XkubeSchedulerImageName, cfg))
 		imgs = append(imgs, GetKubernetesImage(constants.KubeProxy, cfg))
 	}
 
@@ -107,7 +134,7 @@ func GetControlPlaneImages(cfg *kubeadmapi.ClusterConfiguration) []string {
 
 	// if etcd is not external then add the image as it will be required
 	if cfg.Etcd.Local != nil {
-		imgs = append(imgs, GetEtcdImage(cfg))
+		imgs = append(imgs, GetXEtcdImage(cfg))
 	}
 
 	// Append the appropriate DNS images

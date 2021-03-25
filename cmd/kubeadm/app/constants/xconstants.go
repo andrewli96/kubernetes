@@ -7,6 +7,7 @@ const (
 	XCertificatesDefaultDir     = "/etc/kubernetes/pki"
 	XEtcdCertificatesDefaultDir = "/etc/kubernetes/pki/etcd"
 	XKubeletDefaultDir          = "/var/lib/kubelet"
+	XKubeletCertDefaultDir      = "/var/lib/kubelet/pki"
 	XManifestDefaultDir         = "/etc/kubernetes/manifests"
 	XContainerdDefaultDir       = "/etc/containerd"
 
@@ -35,4 +36,13 @@ const (
 
 	// xContainerd
 	XContainerdConfigurationFileName = "config.toml"
+
+	// xImages
+	XRegistry = "docker-reg.basebit.me:5000"
+
+	XKubeApiserverImageName         = "kube/xkube-apiserver-amd64"
+	XKubeControllerManagerImageName = "kube/xkube-controller-manager-amd64"
+	XkubeSchedulerImageName         = "kube/xkube-scheduler-amd64"
+	XEtcdImageName                  = "kube/xetcd"
+	XEtcdImageTag                   = "v3.4.15-9-g4bfc37a0a"
 )

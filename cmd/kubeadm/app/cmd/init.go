@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
-	"time"
 
 	"git.basebit.me/enigma/xkube-common/cryptfs"
 	"github.com/lithammer/dedent"
@@ -178,12 +177,10 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 			xMustMakeDirAll(fs, kubeadmconstants.XCertificatesDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XEtcdCertificatesDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XKubeletDefaultDir, sqlfsMkdirMode)
+			xMustMakeDirAll(fs, kubeadmconstants.XKubeletCertDefaultDir, sqlfsMkdirMode)
 			xMustMakeDirAll(fs, kubeadmconstants.XManifestDefaultDir, sqlfsMkdirMode)
 			fs.Close()
 
-			// TODO(need to be fixed): dirty way to bypass sqlfs reopen on linux
-			klog.Infoln("Wait till Cryptfs ready for reopen.")
-			time.Sleep(5 * time.Second)
 			// hook all the file operations from local fs into the cryptfs
 			patterns, hookErr := getCryptfsHookedFiles(xKubeadmOptions)
 			if hookErr != nil {
@@ -230,11 +227,12 @@ func newCmdInit(out io.Writer, initOptions *initOptions) *cobra.Command {
 	})
 
 	// initialize the workflow runner with the list of phases
-	initRunner.AppendPhase(phases.NewPreflightPhase())
 	initRunner.AppendPhase(phases.NewCertsPhase())
-	initRunner.AppendPhase(phases.NewKubeConfigPhase())
 	// X: generate xcontainerd config and certs to sqlfs and start xcontainerd
 	initRunner.AppendPhase(phases.NewXContainerdPhase())
+
+	initRunner.AppendPhase(phases.NewPreflightPhase())
+	initRunner.AppendPhase(phases.NewKubeConfigPhase())
 	initRunner.AppendPhase(phases.NewKubeletStartPhase())
 	initRunner.AppendPhase(phases.NewControlPlanePhase())
 	initRunner.AppendPhase(phases.NewEtcdPhase())
