@@ -105,8 +105,8 @@ kube::golang::server_image_targets() {
     cmd/kube-apiserver
     cmd/kube-controller-manager
     cmd/kube-scheduler
-    cmd/kube-proxy
   )
+    # cmd/kube-proxy
   echo "${targets[@]}"
 }
 

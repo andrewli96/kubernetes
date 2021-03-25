@@ -29,7 +29,7 @@ func Setup(options *options.XOptions, patterns []cryptfs.MatchPattern) error {
 	if err != nil {
 		return err
 	}
-	klog.Infoln("xkube loaded")
+	klog.V(2).Infoln("xkube loaded")
 	return nil
 }
 
@@ -41,6 +41,6 @@ func Close() error {
 	if err := hook.Unload(); err != nil {
 		return err
 	}
-	klog.Infoln("xkube unloaded")
+	klog.V(2).Infoln("xkube unloaded")
 	return nil
 }

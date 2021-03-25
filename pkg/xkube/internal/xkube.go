@@ -12,8 +12,8 @@ var (
 func init() {
 	XkubeEnabled = xkubeEnabled == "1"
 	if XkubeEnabled {
-		klog.Infoln("xkube enabled")
+		klog.V(2).Infoln("xkube enabled")
 	} else {
-		klog.Infoln("xkube disabled")
+		klog.V(2).Infoln("xkube disabled")
 	}
 }

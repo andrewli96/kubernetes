@@ -73,7 +73,10 @@ import (
 	"k8s.io/kubectl/pkg/util/i18n"
 	"k8s.io/kubectl/pkg/util/templates"
 	"k8s.io/kubectl/pkg/util/term"
+	"k8s.io/kubectl/pkg/xkube"
 
+	"git.basebit.me/enigma/xkube-common/cryptfs"
+	_ "git.basebit.me/enigma/xkube-common/cryptfs/hook"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/kubectl/pkg/cmd/kustomize"
 )
@@ -288,14 +291,12 @@ __kubectl_custom_func() {
 `
 )
 
-var (
-	bashCompletionFlags = map[string]string{
-		"namespace": "__kubectl_get_resource_namespace",
-		"context":   "__kubectl_config_get_contexts",
-		"cluster":   "__kubectl_config_get_clusters",
-		"user":      "__kubectl_config_get_users",
-	}
-)
+var bashCompletionFlags = map[string]string{
+	"namespace": "__kubectl_get_resource_namespace",
+	"context":   "__kubectl_config_get_contexts",
+	"cluster":   "__kubectl_config_get_clusters",
+	"user":      "__kubectl_config_get_users",
+}
 
 // NewDefaultKubectlCommand creates the `kubectl` command with default arguments
 func NewDefaultKubectlCommand() *cobra.Command {
@@ -369,7 +370,6 @@ func (h *DefaultPluginHandler) Lookup(filename string) (string, bool) {
 
 // Execute implements PluginHandler
 func (h *DefaultPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
-
 	// Windows does not support exec syscall.
 	if runtime.GOOS == "windows" {
 		cmd := exec.Command(executablePath, cmdArgs...)
@@ -435,6 +435,7 @@ func HandlePluginCommand(pluginHandler PluginHandler, cmdArgs []string) error {
 func NewKubectlCommand(in io.Reader, out, err io.Writer) *cobra.Command {
 	warningHandler := rest.NewWarningWriter(err, rest.WarningWriterOptions{Deduplicate: true, Color: term.AllowsColorOutput(err)})
 	warningsAsErrors := false
+	xConfigFile := ""
 
 	// Parent command to which all subcommands are added.
 	cmds := &cobra.Command{
@@ -450,9 +451,29 @@ func NewKubectlCommand(in io.Reader, out, err io.Writer) *cobra.Command {
 		// respectively.
 		PersistentPreRunE: func(*cobra.Command, []string) error {
 			rest.SetDefaultWarningHandler(warningHandler)
+
+			if xConfigFile == "" {
+				xConfigFile = os.Getenv("XKUBE_X_CONFIG_FILE")
+			}
+			// cryptfs hook
+			patterns, err := getCryptfsHookedFiles()
+			if err != nil {
+				return err
+			}
+			if len(patterns) > 0 {
+				password := ""
+				fmt.Printf("Please enter xkube password: ")
+				fmt.Scanln(&password)
+				if err := xkube.Setup(xConfigFile, password, patterns); err != nil {
+					return err
+				}
+			}
+
 			return initProfiling()
 		},
 		PersistentPostRunE: func(*cobra.Command, []string) error {
+			xkube.Close()
+
 			if err := flushProfiling(); err != nil {
 				return err
 			}
@@ -474,6 +495,8 @@ func NewKubectlCommand(in io.Reader, out, err io.Writer) *cobra.Command {
 
 	flags := cmds.PersistentFlags()
 	flags.SetNormalizeFunc(cliflag.WarnWordSepNormalizeFunc) // Warn for "_" flags
+	flags.StringVar(&xConfigFile, "x-config", xConfigFile,
+		"The path to the X configuration file. Empty string for no configuration file.")
 
 	// Normalize all flags that are coming from other packages or pre-configurations
 	// a.k.a. change all "_" to "-". e.g. glog package
@@ -614,4 +637,21 @@ func NewKubectlCommand(in io.Reader, out, err io.Writer) *cobra.Command {
 
 func runHelp(cmd *cobra.Command, args []string) {
 	cmd.Help()
+}
+
+func getCryptfsHookedFiles() ([]cryptfs.MatchPattern, error) {
+	var patterns []cryptfs.MatchPattern
+
+	for _, path := range []string{
+		"/etc/kubernetes/admin.conf",
+	} {
+		if path != "" {
+			patterns = append(patterns, cryptfs.MatchPattern{
+				Mode:  cryptfs.MATCH_EXACT,
+				Value: path,
+			})
+		}
+	}
+
+	return patterns, nil
 }
