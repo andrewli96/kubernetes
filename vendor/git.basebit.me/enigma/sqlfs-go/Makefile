@@ -30,6 +30,7 @@ test:
 .PHONY: build
 build:
 	go build ./...
+# CGO_ENABLED=1 go build -ldflags '-linkmode "external" -extldflags "-static"' ./...
 
 .PHONY: staticcheck
 staticcheck:

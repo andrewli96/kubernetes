@@ -12,6 +12,7 @@ go_library(
         "constants.go",
         "constants_unix.go",
         "constants_windows.go",
+        "xconstants.go",
     ],
     importpath = "k8s.io/kubernetes/cmd/kubeadm/app/constants",
     deps = [

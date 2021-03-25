@@ -12,6 +12,7 @@ int readdirnames_filler(void* buf, char* name, struct stat *stbuf, off_t off);
 import "C"
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -41,14 +42,15 @@ func Open(db string) (*FS, error) {
 }
 
 func OpenWithPassword(db string, password []byte) (*FS, error) {
+	normpass := sha256.Sum256(password)
 	cDB := C.CString(db)
 	defer C.free(unsafe.Pointer(cDB))
-	cPassword := C.CBytes(password)
+	cPassword := C.CBytes(normpass[:])
 	defer C.free(cPassword)
-	defer C.memset(cPassword, 0, C.size_t(len(password)))
+	defer C.memset(cPassword, 0, C.size_t(len(normpass)))
 	var fs *C.sqlfs_t
 
-	rc := C.sqlfs_open_password(cDB, (*C.char)(cPassword), &fs)
+	rc := C.sqlfs_open_key(cDB, (*C.uint8_t)(cPassword), C.size_t(len(normpass)), &fs)
 	if rc == 0 {
 		return nil, fmt.Errorf("open sqlfs error")
 	}

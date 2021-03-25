@@ -37,7 +37,9 @@ func NewWithPlainSQLite(db string, hookedPatterns []MatchPattern) (*CryptFs, err
 			sfs.Close()
 		}
 	}()
-	return newCryptFS(sfs, hookedPatterns)
+	var fs *CryptFs
+	fs, err = newCryptFS(sfs, hookedPatterns)
+	return fs, err
 }
 
 func New(db string, password []byte, hookedPatterns []MatchPattern) (*CryptFs, error) {
@@ -50,7 +52,9 @@ func New(db string, password []byte, hookedPatterns []MatchPattern) (*CryptFs, e
 			sfs.Close()
 		}
 	}()
-	return newCryptFS(sfs, hookedPatterns)
+	var fs *CryptFs
+	fs, err = newCryptFS(sfs, hookedPatterns)
+	return fs, err
 }
 
 func newCryptFS(sfs *sqlfs.FS, hookedPatterns []MatchPattern) (*CryptFs, error) {

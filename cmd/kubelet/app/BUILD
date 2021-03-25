@@ -36,6 +36,7 @@ go_library(
         "//pkg/kubelet/cm/cpuset:go_default_library",
         "//pkg/kubelet/config:go_default_library",
         "//pkg/kubelet/container:go_default_library",
+        "//pkg/kubelet/cri/remote:go_default_library",
         "//pkg/kubelet/eviction:go_default_library",
         "//pkg/kubelet/eviction/api:go_default_library",
         "//pkg/kubelet/kubeletconfig:go_default_library",
